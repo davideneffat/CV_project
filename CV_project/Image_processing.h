@@ -17,4 +17,4 @@ void calculate_food(cv::Mat image);
 
 cv::Mat kmeans(cv::Mat image, int numRegions);
 int evaluate_kmeans(cv::Mat src, cv::Mat clusterized, int numRegions);
-void print_clustered_img(cv::Mat img);
+cv::Mat print_clustered_img(cv::Mat img);

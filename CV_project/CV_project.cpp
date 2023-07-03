@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 
     
     //bilateral con sigma s=2/4 e sigma h=10/20
-    Mat src = imread("C:/Users/david/source/repos/CV_project/CV_project/Food_leftover_dataset/start_imgs/hough_circles/h8.png");
+    Mat src = imread("C:/Users/david/source/repos/CV_project/CV_project/Food_leftover_dataset/start_imgs/hough_circles/h0.png");
     imshow("input src", src);
     
 
@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
 
     //Remove the dish (white pixels):
     Scalar lowerBound = Scalar(0, 0, 0); // H=colore[0,180], S=bianco-colore[0,255], V=nero-colore[0,255] to remove plate (bianco)
-    Scalar upperBound = Scalar(255, 35, 255);
+    Scalar upperBound = Scalar(255, 50, 255);
     Mat hsv;
     cvtColor(mean_shift_img, hsv, COLOR_BGR2HSV);  //transform from RGB to HSV
     Mat mask;
@@ -130,33 +130,40 @@ int main(int argc, char* argv[])
 
 
     //apply kmeans with k=1,2,3 and find best value for k
-    Mat res = kmeans(mean_shift_img, 1);
-    //print_clustered_img(res);
-    int err1 = evaluate_kmeans(mean_shift_img, res, 1);
+    Mat res1 = kmeans(mean_shift_img, 1);
+    Mat out1 = print_clustered_img(res1);
+    imshow("res1", out1);
+    int err1 = evaluate_kmeans(mean_shift_img, res1, 1);
     cout << "Errore con 1 cluster = " << to_string(err1) << "\n";
 
-    res = kmeans(mean_shift_img, 2);
-    //print_clustered_img(res);
-    int err2 = evaluate_kmeans(mean_shift_img, res, 2);
+    Mat res2 = kmeans(mean_shift_img, 2);
+    Mat out2 = print_clustered_img(res2);
+    imshow("res2", out2);
+    int err2 = evaluate_kmeans(mean_shift_img, res2, 2);
     cout << "Errore con 2 cluster = " << to_string(err2) << "\n";
 
-    res = kmeans(mean_shift_img, 3);
-    //print_clustered_img(res);
-    int err3 = evaluate_kmeans(mean_shift_img, res, 3);
+    Mat res3 = kmeans(mean_shift_img, 3);
+    Mat out3 = print_clustered_img(res3);
+    imshow("res3", out3);
+    int err3 = evaluate_kmeans(mean_shift_img, res3, 3);
     cout << "Errore con 3 cluster = " << to_string(err3) << "\n";
     
     int best_k; //number of clusters that minimizes variance
-    if (err1 <= err2) {
-        if (err1 <= err3)
-            best_k = 1;
-        best_k = 3;
+    if ((err1 <= err2) && (err1 <= err3)) {
+        best_k = 1;
     }
-    else if (err2 <= err3)
+    else if ((err2 <= err1) && (err2 <= err3))
         best_k = 2;
-    else
+    else if ((err3 <= err1) && (err3 <= err2))
         best_k = 3;
 
     cout << to_string(best_k) << "\n";
+
+
+    //dilate(res3, res3, Mat(), Point(-1, -1), 2, 1, 1);
+    erode(res3, res3, Mat(), Point(-1, -1), 2, 1, 1);
+    Mat out3_dilated = print_clustered_img(res3);
+    imshow("res3_dilated", out3_dilated);
 
     waitKey(0);
 }

@@ -185,7 +185,7 @@ Mat kmeans(Mat mean_shift_img, int numRegions) {
     }
 
 
-    Mat featureMatrix(numPixels, 6, CV_32F);
+    Mat featureMatrix(numPixels, 3, CV_32F);
     int index = 0;
 
     Mat hsv;
@@ -195,12 +195,12 @@ Mat kmeans(Mat mean_shift_img, int numRegions) {
         for (int j = 0; j < mean_shift_img.cols; j++) {
             Vec3b pixel = mean_shift_img.at<Vec3b>(i, j);
             if (pixel != Vec3b(0, 0, 0)) {
-                featureMatrix.at<float>(index, 0) = static_cast<float>(pixel[0]);  // Blue channel
-                featureMatrix.at<float>(index, 1) = static_cast<float>(pixel[1]);  // Green channel
-                featureMatrix.at<float>(index, 2) = static_cast<float>(pixel[2]);  // Red channel
-                featureMatrix.at<float>(index, 3) = static_cast<float>(i);      // Pixel row
-                featureMatrix.at<float>(index, 4) = static_cast<float>(j);      // Pixel column
-                featureMatrix.at<float>(index, 5) = static_cast<float>(hsv.at<Vec3b>(i, j)[0]);     // H hsv color
+                //featureMatrix.at<float>(index, 0) = static_cast<float>(pixel[0]);  // Blue channel
+                //featureMatrix.at<float>(index, 1) = static_cast<float>(pixel[1]);  // Green channel
+                //featureMatrix.at<float>(index, 2) = static_cast<float>(pixel[2]);  // Red channel
+                featureMatrix.at<float>(index, 0) = static_cast<float>(i / mean_shift_img.rows);      // Pixel row
+                featureMatrix.at<float>(index, 1) = static_cast<float>(j / mean_shift_img.cols);      // Pixel column
+                featureMatrix.at<float>(index, 2) = static_cast<float>(hsv.at<Vec3b>(i, j)[0] / 180);     // H hsv color
                 index++;
             }
         }
@@ -235,7 +235,7 @@ Mat kmeans(Mat mean_shift_img, int numRegions) {
             if (pixel != Vec3b(0, 0, 0)) {
                 int label = labels.at<int>(index++);
                 //outputImage.at<Vec3b>(i, j) = Vec3b(centers.at<float>(label, 2), centers.at<float>(label, 1), centers.at<float>(label, 0));
-                outputImage.at<Vec3b>(i, j) = Vec3b(label, label, label);
+                outputImage.at<Vec3b>(i, j) = Vec3b(label+1, label+1, label+1);
             }
         }
     }
@@ -254,8 +254,11 @@ int evaluate_kmeans(Mat src, Mat clusterized, int numRegions) {
     Mat hsv;
     cvtColor(src, hsv, COLOR_BGR2HSV);  //transform from RGB to HSV
 
-    vector<int>  mean(numRegions, 0);  //containing sum of H values for each label
-    vector<int> count(numRegions, 0);  //count number of pixels for each label to produce mean
+    //cout << to_string(clusterized.at<Vec3b>(1, 1)[0]) <<"  "<< to_string(clusterized.at<Vec3b>(1, 1)[1])<< "  "<< to_string(clusterized.at<Vec3b>(1, 1)[2]) << "\n";
+
+    //label 0=background, 1,2,3 other labels
+    vector<int>  mean(numRegions+1, 0);  //containing sum of H values for each label
+    vector<int> count(numRegions+1, 0);  //count number of pixels for each label to produce mean
 
     for (int i = 0; i < hsv.rows; i++) {
         for (int j = 0; j < hsv.cols; j++) {
@@ -274,7 +277,8 @@ int evaluate_kmeans(Mat src, Mat clusterized, int numRegions) {
     for (int i = 0; i < hsv.rows; i++) {
         for (int j = 0; j < hsv.cols; j++) {
             int label = clusterized.at<Vec3b>(i, j)[0];
-            total_error += abs(hsv.at<Vec3b>(i, j)[0] - mean[label]);
+            if(label != 0)
+                total_error += abs(hsv.at<Vec3b>(i, j)[0] - mean[label]);
         }
     }
 
@@ -283,14 +287,16 @@ int evaluate_kmeans(Mat src, Mat clusterized, int numRegions) {
 
 
 
-void print_clustered_img(Mat img) {
+Mat print_clustered_img(Mat img) {
+
+    Mat outputImage = Mat::zeros(img.size(), CV_8UC3);
 
     for (int i = 0; i < img.rows; i++) {
         for (int j = 0; j < img.cols; j++) {
-            img.at<Vec3b>(i, j)[0] = (img.at<Vec3b>(i, j)[0] + 1) * 50;
-            img.at<Vec3b>(i, j)[1] = (img.at<Vec3b>(i, j)[1] + 1) * 50;
-            img.at<Vec3b>(i, j)[2] = (img.at<Vec3b>(i, j)[2] + 1) * 50;
+            outputImage.at<Vec3b>(i, j)[0] = (img.at<Vec3b>(i, j)[0]) * 50;
+            outputImage.at<Vec3b>(i, j)[1] = (img.at<Vec3b>(i, j)[1]) * 50;
+            outputImage.at<Vec3b>(i, j)[2] = (img.at<Vec3b>(i, j)[2]) * 50;
         }
     }
-    imshow("Image clusterized", img);
+    return outputImage;
 }
