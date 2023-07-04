@@ -1,7 +1,7 @@
 #pragma once
 #include <opencv2\opencv.hpp>
 
-void hough_transform(cv::String img_path);
+std::vector<cv::Mat> hough_transform(cv::String img_path);
 
 cv::Mat find_pasta(cv::Mat image);
 cv::Mat find_pesto(cv::Mat image);
@@ -13,8 +13,9 @@ cv::Mat find_carne(cv::Mat image);
 cv::Mat find_patate(cv::Mat image);
 cv::Mat find_pesce(cv::Mat image);
 
-void calculate_food(cv::Mat image);
 
 cv::Mat kmeans(cv::Mat image, int numRegions);
 int evaluate_kmeans(cv::Mat src, cv::Mat clusterized, int numRegions);
 cv::Mat print_clustered_img(cv::Mat img);
+
+int findBestNumClusters(cv::Mat mean_shift_img);
