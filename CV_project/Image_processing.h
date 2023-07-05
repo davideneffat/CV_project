@@ -3,11 +3,10 @@
 
 std::vector<cv::Mat> hough_transform(cv::String img_path);
 
-cv::Mat find_pasta(cv::Mat image);
-cv::Mat find_pesto(cv::Mat image);
-cv::Mat find_pomodoro(cv::Mat image);
-cv::Mat find_pasta_cozze(cv::Mat image);
-cv::Mat find_ragu(cv::Mat image);
+bool find_pasta_pesto(int c1, int c2);
+bool find_pasta_pomodoro(int c1, int c2);
+bool find_pasta_cozze(int c1);
+bool find_pasta_ragu(int c1, int c2);
 cv::Mat find_fagioli(cv::Mat image);
 cv::Mat find_carne(cv::Mat image);
 cv::Mat find_patate(cv::Mat image);

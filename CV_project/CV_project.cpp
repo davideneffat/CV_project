@@ -93,11 +93,18 @@ int main(int argc, char* argv[])
     //split_images(128, 18);
     //reconstruct_images(128,18);
 
-    vector<Mat> dishes = hough_transform("Food_leftover_dataset/start_imgs/imgs/im6.jpg");
+    vector<Mat> dishes = hough_transform("Food_leftover_dataset/start_imgs/imgs/im1.jpg");
     cout << "Finded " << to_string(dishes.size()) << " dishes\n";
 
     //Mat src = imread("C:/Users/david/source/repos/CV_project/CV_project/Food_leftover_dataset/start_imgs/hough_circles/h2.png");
-
+    vector<vector<float>> colors;
+    /*
+    *colors = [im1_c1, im1_c2]
+    *         [im2_c1]
+    *         [im3_c1, im3_c2, im3_c3]
+    * where im are the images coresponding to the dishes of the vassoio, c are the clusters finded in each dishes
+    * and the values of the matrix are the mean colors (H of hsv value) of each cluster
+    */
 
     for (int i = 0; i < dishes.size(); i++) {
 
@@ -149,6 +156,7 @@ int main(int argc, char* argv[])
         name = "k=2_" + to_string(i);
         imshow(name, out2);
         int err2 = evaluate_kmeans(mean_shift_img, res2, 2);
+        err2 = err2 * 2;
         cout << "Errore con 2 cluster = " << to_string(err2) << "\n";
 
         Mat res3 = kmeans(mean_shift_img, 3);
@@ -156,6 +164,7 @@ int main(int argc, char* argv[])
         name = "k=3_" + to_string(i);
         imshow(name, out3);
         int err3 = evaluate_kmeans(mean_shift_img, res3, 3);
+        err3 = err3 * 3;
         cout << "Errore con 3 cluster = " << to_string(err3) << "\n";
 
         int best_k; //number of clusters that minimizes variance
@@ -172,16 +181,86 @@ int main(int argc, char* argv[])
         cout << to_string(findBestNumClusters(src)) << "\n";
 
 
+        //FIND BEST K CORRECTLY
+        Mat clustered = kmeans(mean_shift_img, best_k);
+        Mat clustered_print = print_clustered_img(clustered);
+        name = "Best_clustering_" + to_string(i);
+        imshow(name, clustered_print);
+
+        vector<float>  mean(best_k, 0);   //contains mean H (hsv) value for each cluster, mean[0]=mean val for cluster 1, mean[1]=mean val for cluster 2...
+        vector<int> count(best_k, 0);  //count number of pixels for each label to produce mean
+
+        Mat src_hsv;    //we use hsv image of src, not of mean_shift as before
+        cvtColor(src, src_hsv, COLOR_BGR2HSV);  //transform from RGB to HSV
+
+        for (int i = 0; i < clustered.rows; i++) {
+            for (int j = 0; j < clustered.cols; j++) {
+                int label = clustered.at<Vec3b>(i, j)[0];
+                if (label != 0) {   //don't take into account background (label = 0)
+                    mean[label - 1] += src_hsv.at<Vec3b>(i, j)[0];  //take value H of hsv image
+                    count[label - 1] += 1;
+                }
+            }
+        }
+
+        for (int i = 0; i < mean.size(); i++) { //calculate means
+            mean[i] = mean[i] / count[i];
+        }
+
+        colors.push_back(mean);
+
         //dilate(res3, res3, Mat(), Point(-1, -1), 2, 1, 1);
         //erode(res3, res3, Mat(), Point(-1, -1), 2, 1, 1);
         //Mat out3_dilated = print_clustered_img(res3);
         //imshow("res3_dilated", out3_dilated);
 
-
     }
 
+    vector<int> foods_founded(13);
+    bool first_course_founded = false;
 
+    //Find first course
+    for (int i = 0; i < colors.size(); i++) {
+        if (colors[i].size() == 2) {    //dish has 2 clusters (1 for pasta and 1 for pesto)
+            if (find_pasta_pesto(colors[i][0], colors[i][1])) {
+                foods_founded[1] = 1;
+                first_course_founded = true;    //we can also delete the dish from the vector
+                break;
+            }
+            if (find_pasta_pomodoro(colors[i][0], colors[i][1])) {
+                foods_founded[2] = 1;
+                first_course_founded = true;
+                break;
+            }
+            if (find_pasta_ragu(colors[i][0], colors[i][1])) {
+                foods_founded[3] = 1;
+                first_course_founded = true;
+                break;
+            }
+        }
+        else if (colors[i].size() == 1) {
+            if (find_pasta_cozze(colors[i][0])) {
+                foods_founded[4] = 1;
+                first_course_founded = true;
+                break;
+            }
+        }
+    }
 
+    //Find second course
+
+    for (int i = 0; i < foods_founded.size(); i++) {
+        cout << to_string(foods_founded[i]) << "\n";
+    }
+
+    for (int i = 0; i < colors.size(); i++) {
+        for (int j = 0; j < colors[i].size(); j++) {
+            cout << to_string(colors[i][j]) << "  ";
+        }
+        cout << "\n";
+    }
+
+    
 
     waitKey(0);
 }

@@ -7,54 +7,45 @@ using namespace std;
 using namespace cv;
 
 
-Mat find_pasta(Mat image) {
+bool find_pasta_pesto(int c1, int c2) {
 
-    Scalar lowerBound = Scalar(11, 80, 65); // H=colore[0,180], S=bianco-colore[0,255], V=nero-colore[0,255]
-    Scalar upperBound = Scalar(23, 255, 255);
-
-    Mat output_mask;
-    inRange(image, lowerBound, upperBound, output_mask);    //filter pixels in range
-    return output_mask;
+    if ((c1 > 25.0) && (c1 < 50.0) && (c2 > 10.0) && (c2 < 28.0)) {   //cluster 1 green and cluster 2 yellow
+        return true;   //pasta al pesto founded
+    }
+    else if ((c2 > 25.0) && (c2 < 50.0) && (c1 > 10.0) && (c1 < 28.0)) {   //cluster 1 yellow and cluster 2 green
+        return true;   //pasta al pesto founded
+    }
+    return false;
 }
 
-Mat find_pesto(Mat image) {
-    
-    Scalar lowerBound = Scalar(30, 60, 30); // H=colore[0,180], S=bianco-colore[0,255], V=nero-colore[0,255]
-    Scalar upperBound = Scalar(45, 255, 255);
-    
-    Mat output_mask;
-    inRange(image, lowerBound, upperBound, output_mask);    //filter pixels in range
-    return output_mask;
+bool find_pasta_pomodoro(int c1, int c2) {
+
+    if ((c1 < 15.0) && (c2 > 10.0) && (c2 < 28.0)) {   //cluster 1 red and cluster 2 yellow
+        return true;   //pasta al pomodoro founded
+    }
+    else if ((c2 < 15.0) && (c1 > 10.0) && (c1 < 28.0)) {   //cluster 1 yellow and cluster 2 red
+        return true;   //pasta al pomodoro founded
+    }
+    return false;
 }
 
-Mat find_pomodoro(Mat image) {
+bool find_pasta_cozze(int c1) {
 
-    Scalar lowerBound = Scalar(0, 190, 45); // H=colore[0,180], S=bianco-colore[0,255], V=nero-colore[0,255]
-    Scalar upperBound = Scalar(12, 255, 255);
-
-    Mat output_mask;
-    inRange(image, lowerBound, upperBound, output_mask);    //filter pixels in range
-    return output_mask;
+    if ((c1 > 10.0) && (c1 < 17.0)) {   //cluster 1 red
+        return true;   //pasta cozze founded
+    }
+    return false;
 }
 
-Mat find_pasta_cozze(Mat image) {
+bool find_pasta_ragu(int c1, int c2) {
 
-    Scalar lowerBound = Scalar(9, 148, 69); // H=colore[0,180], S=bianco-colore[0,255], V=nero-colore[0,255]
-    Scalar upperBound = Scalar(18, 255, 255);
-
-    Mat output_mask;
-    inRange(image, lowerBound, upperBound, output_mask);    //filter pixels in range
-    return output_mask;
-}
-
-Mat find_ragu(Mat image) {
-
-    Scalar lowerBound = Scalar(5, 85, 50); // H=colore[0,180], S=bianco-colore[0,255], V=nero-colore[0,255]
-    Scalar upperBound = Scalar(10, 255, 200);
-
-    Mat output_mask;
-    inRange(image, lowerBound, upperBound, output_mask);    //filter pixels in range
-    return output_mask;
+    if ((c1 < 20.0) && (c2 > 10.0) && (c2 < 28.0)) {   //cluster 1 red and cluster 2 yellow
+        return true;   //pasta al ragu founded
+    }
+    else if ((c2 < 20.0) && (c1 > 10.0) && (c1 < 28.0)) {   //cluster 1 yellow and cluster 2 red
+        return true;   //pasta al ragu founded
+    }
+    return false;
 }
 
 Mat find_fagioli(Mat image) {
@@ -272,7 +263,7 @@ int evaluate_kmeans(Mat src, Mat clusterized, int numRegions) {
     for (int i = 0; i < hsv.rows; i++) {
         for (int j = 0; j < hsv.cols; j++) {
             int label = clusterized.at<Vec3b>(i, j)[0];
-            if(label != 0)
+            if (label != 0) 
                 total_error += abs(hsv.at<Vec3b>(i, j)[0] - mean[label]);
         }
     }
@@ -337,6 +328,7 @@ int findBestNumClusters(Mat mean_shift_img) {
 
         double avgDist = sumDist / featureMatrixFloat.rows;
         distortion.push_back(avgDist);
+
     }
 
     // Find the best number of clusters
@@ -348,6 +340,7 @@ int findBestNumClusters(Mat mean_shift_img) {
             minDistortion = distortion[i];
         }
     }
+
 
     return bestNumClusters;
 }
