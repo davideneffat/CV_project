@@ -1,116 +1,253 @@
 
 #include <opencv2\opencv.hpp>
+#include <iostream>
+#include <fstream>
 #include <vector>
 #include "Image_processing.h"
+#include "watershed.h"
+#include <opencv2/features2d.hpp>
+#include <opencv2/ml.hpp>
+
+
+
 
 using namespace std;
 using namespace cv;
+using namespace cv::ml;
 
-void reconstruct_images(int N, int dataset_size) {
 
-    vector<Mat> images; //vector of images
+const int numClasses = 1;
+const int numClusters = 100;
+const string trainingDataPath = "Food_leftover_dataset/dataset/fagioli/imgs/";  //training data
+const string vocabularyFile = "vocabulary.xml";
+const string svmModelFile = "svm_model.xml";
 
-    for (int i = 1; i <= dataset_size; i++) {
-        string path = "C:/Users/david/OneDrive/Desktop/Food_leftover_dataset/dataset/pasta_pesto/im" + to_string(i) + ".jpg";
-        images.push_back(imread(path));
-    }
+void extractFeatures(const Mat& image, vector<KeyPoint>& keypoints, Mat& descriptors)
+{
+    cv::Ptr<cv::FastFeatureDetector> fast = cv::FastFeatureDetector::create();
+    cv::Ptr<cv::SIFT> sift = cv::SIFT::create();
 
-    int patch_num = 0;  //patches counter
-    for (int im = 0; im < images.size(); im++) {
-        // Create a black image
-        Mat res = Mat::zeros(Size(images[im].cols, images[im].rows), CV_8UC1);  //8 bit, 1 channel
-
-        for (int r = 0; r < images[im].rows; r += N)
-        {
-            for (int c = 0; c < images[im].cols; c += N)
-            {
-                string path = "C:/Users/david/OneDrive/Desktop/Food_leftover_dataset/dataset/pasta_pesto_predicted128x128/im" + to_string(patch_num) + ".png";
-                Mat patch = imread(path, IMREAD_GRAYSCALE);
-                if ((r + patch.size().height < images[im].size().height) && (c + patch.size().width < images[im].size().width)) {
-                    
-                    patch.copyTo(res(Rect(c, r, patch.size().width, patch.size().height)));
-                    patch_num++;
-                }
-            }
-        }
-
-        String output_path = "C:/Users/david/OneDrive/Desktop/Food_leftover_dataset/dataset/pasta_pesto_predicted/im" + to_string(im) + ".png";
-        imwrite(output_path, res);
-    }
-
-}
-
-void split_images(int N, int dataset_size) {
-    vector<Mat> images; //vector of images
-
-    for (int i = 1; i <= dataset_size; i++) {
-        string path = "C:/Users/david/OneDrive/Desktop/Food_leftover_dataset/dataset/pasta_pesto_mask/m" + to_string(i) + ".png";
-        images.push_back(imread(path));
-    }
-
-    int name = 0;
-    for (int im = 0; im < images.size(); im++)
+    fast->detect(image, keypoints);
+    //sift->compute(image, keypoints, descriptors);
+    cout << "extract sift:\n";
+    sift->detectAndCompute(image, cv::noArray(), keypoints, descriptors);
+    // Check if feature descriptors are empty
+    if (descriptors.empty())
     {
-        for (int r = 0; r < images[im].rows; r += N)
-        {
-            for (int c = 0; c < images[im].cols; c += N)
-            {
-                string path = "C:/Users/david/OneDrive/Desktop/Food_leftover_dataset/dataset/pasta_pesto_mask128x128/im" + to_string(name) + ".png";
-
-                Mat patch = images[im](Range(r, min(r + N, images[im].rows)), Range(c, min(c + N, images[im].cols)));
-                if ((patch.size().height == N) && (patch.size().width == N)) {
-                    imwrite(path, patch);     //for saving new patches
-                    name++;
-                }
-            }
-        }
+        std::cout << "No feature descriptors found." << std::endl;
     }
+    cout << to_string(descriptors.cols) << "\n";
 }
 
-vector<int> get_img_histogram(Mat img) {
-    vector<int> histogram(256, 0);  //size=255, all elements set to 0
-    int val = 0;
-    for (int r = 0; r < img.rows; r += 1)
+void buildVocabulary(const vector<Mat>& trainingImages, Mat& vocabulary)
+{
+    Ptr<BOWKMeansTrainer> bowTrainer = makePtr<BOWKMeansTrainer>(numClusters);
+    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("FlannBased");
+    
+    for (const auto& image : trainingImages)
     {
-        for (int c = 0; c < img.cols; c += 1)
-        {
-            val = img.at<uchar>(r, c);
-            histogram[val] = histogram[val] + 1;
-        }
+        cout << "a\n";
+        vector<KeyPoint> keypoints;
+        Mat descriptors;
+        extractFeatures(image, keypoints, descriptors);
+        cout << "b\n";
+        bowTrainer->add(descriptors);
+        cout << "c\n";
     }
-    return histogram;
+    
+    vocabulary = bowTrainer->cluster();
+    cout << "Clustering ended\n";
+}
+
+void computeBowDescriptor(const Mat& image, const Mat& vocabulary, Mat& bowDescriptor)
+{
+    Ptr<FeatureDetector> orb = ORB::create();
+    Ptr<DescriptorExtractor> orbDescriptorExtractor = ORB::create();
+
+    vector<KeyPoint> keypoints;
+    Mat descriptors;
+    orb->detect(image, keypoints);
+    orbDescriptorExtractor->compute(image, keypoints, descriptors);
+
+    // Create a BOWImgDescriptorExtractor with a BruteForce matcher
+    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce");
+    Ptr<BOWImgDescriptorExtractor> bowExtractor = makePtr<BOWImgDescriptorExtractor>(orbDescriptorExtractor, matcher);
+    bowExtractor->setVocabulary(vocabulary);
+
+    bowExtractor->compute(image, keypoints, bowDescriptor);
 }
 
 
 
+void trainClassifier(const vector<Mat>& trainingImages, const Mat& vocabulary, const vector<int>& labels, Ptr<cv::ml::SVM>& svm)
+{
+    Mat trainingData;
+    vector<int> trainingLabels;
 
+    for (size_t i = 0; i < trainingImages.size(); i++)
+    {
+        Mat bowDescriptor;
+        computeBowDescriptor(trainingImages[i], vocabulary, bowDescriptor);
+        trainingData.push_back(bowDescriptor);
+        trainingLabels.push_back(labels[i]);
+    }
 
+    Mat trainingDataFloat;
+    trainingData.convertTo(trainingDataFloat, CV_32FC1);
+
+    svm = SVM::create();
+    svm->setType(SVM::C_SVC);
+    svm->setKernel(SVM::RBF);
+    svm->train(trainingDataFloat, ROW_SAMPLE, Mat(trainingLabels));
+    svm->save(svmModelFile);
+}
+
+int classifyImage(const Mat& image, const Mat& vocabulary, Ptr<cv::ml::SVM>& svm)
+{
+    Mat bowDescriptor;
+    computeBowDescriptor(image, vocabulary, bowDescriptor);
+    Mat bowDescriptorFloat;
+    bowDescriptor.convertTo(bowDescriptorFloat, CV_32FC1);
+
+    return svm->predict(bowDescriptorFloat);
+}
 
 
 
 int main(int argc, char* argv[])
 {
-    //split_images(128, 18);
-    //reconstruct_images(128,18);
+    // Step 1: Prepare the Training Data
+    vector<Mat> trainingImages;
+    vector<int> labels;
+    
+    for (int i = 0; i < numClasses; i++)
+    {
+        for (int j=0; j<5; j++)   //20 images training set
+        {
+            string imagePath = trainingDataPath + "fagioli" + to_string(j) + ".jpg";
+            Mat image = imread(imagePath, IMREAD_GRAYSCALE);
+            trainingImages.push_back(image);
+            labels.push_back(i + 1);
+        }
+    }
+    cout << "AAAAAAAAAAAAAAA\n";
+    // Step 2: Feature Extraction using FAST
+
+    // Step 3: Build the Visual Vocabulary (Bag of Words)
+    Mat vocabulary;
+    buildVocabulary(trainingImages, vocabulary);
+    cout << "11111111111111\n";
+    FileStorage fs(vocabularyFile, FileStorage::WRITE);
+    fs << "vocabulary" << vocabulary;
+    fs.release();
+    cout << "BBBBBBBBBBBBBBB\n";
+    // Step 4: Train the Classifier
+    Ptr<cv::ml::SVM> svm;
+    trainClassifier(trainingImages, vocabulary, labels, svm);
+    cout << "CCCCCCCCCCCCCCCCCCC\n";
+    // Step 5: Classify New Images
+    Mat testImage = imread("Food_leftover_dataset/dataset/fagioli/imgs/fagioli20.jpg", IMREAD_GRAYSCALE);
+    int predictedClass = classifyImage(testImage, vocabulary, svm);
+    cout << "Predicted class: " << to_string(predictedClass) << endl;
+
+
+
+
+
+
+    // Load the two input images
+    /*cv::Mat image1 = cv::imread("Food_leftover_dataset/tray1/food_image.jpg", cv::IMREAD_GRAYSCALE);
+    cv::Mat image2 = cv::imread("Food_leftover_dataset/tray1/leftover1.jpg", cv::IMREAD_GRAYSCALE);
+    imshow("A", image1);
+    imshow("B", image2);
+
+
+    // Convert the images to 8-bit grayscale if needed
+    if (image1.type() != CV_8U || image2.type() != CV_8U)
+    {
+        cv::cvtColor(image1, image1, cv::COLOR_BGR2GRAY);
+        cv::cvtColor(image2, image2, cv::COLOR_BGR2GRAY);
+    }
+
+    // Step 1: Detect features using FAST
+    std::vector<cv::KeyPoint> keypoints1, keypoints2;
+    cv::Ptr<cv::FastFeatureDetector> fast = cv::FastFeatureDetector::create();
+    fast->detect(image1, keypoints1);
+    fast->detect(image2, keypoints2);
+
+    // Step 2: Extract feature descriptors using SIFT
+    cv::Ptr<cv::SIFT> sift = cv::SIFT::create();
+    cv::Mat descriptors1, descriptors2;
+    sift->detectAndCompute(image1, cv::noArray(), keypoints1, descriptors1);
+    sift->detectAndCompute(image2, cv::noArray(), keypoints2, descriptors2);
+
+    // Check if feature descriptors are empty
+    if (descriptors1.empty() || descriptors2.empty())
+    {
+        std::cout << "No feature descriptors found." << std::endl;
+        return -1;
+    }
+
+    // Step 3: Match feature descriptors using BruteForce
+    cv::BFMatcher matcher(cv::NORM_L2);
+    std::vector<std::vector<cv::DMatch>> knnMatches;
+    matcher.knnMatch(descriptors1, descriptors2, knnMatches, 2);
+
+    // Apply ratio test to filter good matches
+    const float ratioThreshold = 0.7f;
+    std::vector<cv::DMatch> goodMatches;
+    for (const auto& matches : knnMatches)
+    {
+        if (matches.size() >= 2 && matches[0].distance < ratioThreshold * matches[1].distance)
+        {
+            goodMatches.push_back(matches[0]);
+        }
+    }
+
+    // Step 4: Draw the matches
+    cv::Mat matchedImage;
+    cv::drawMatches(image1, keypoints1, image2, keypoints2, goodMatches, matchedImage);
+
+    // Display the matched image
+    cv::namedWindow("Matches", cv::WINDOW_NORMAL);
+    cv::imshow("Matches", matchedImage);*/
+    
+
+
+
 
     vector<Mat> dishes = hough_transform("Food_leftover_dataset/start_imgs/imgs/im1.jpg");
     cout << "Finded " << to_string(dishes.size()) << " dishes\n";
 
-    //Mat src = imread("C:/Users/david/source/repos/CV_project/CV_project/Food_leftover_dataset/start_imgs/hough_circles/h2.png");
-    vector<vector<float>> colors;
-    /*
-    *colors = [im1_c1, im1_c2]
-    *         [im2_c1]
-    *         [im3_c1, im3_c2, im3_c3]
-    * where im are the images coresponding to the dishes of the vassoio, c are the clusters finded in each dishes
-    * and the values of the matrix are the mean colors (H of hsv value) of each cluster
-    */
+
 
     for (int i = 0; i < dishes.size(); i++) {
 
         Mat src = dishes[i];
         string name = "input src" + to_string(i);
         imshow(name, src);
+
+
+
+        /*
+        Mat vassoio = imread("Food_leftover_dataset/start_imgs/imgs/im1.jpg");
+        Mat result;
+        matchTemplate(vassoio, src, result, TM_SQDIFF);
+        normalize(result, result, 0, 1, NORM_MINMAX, -1, Mat());
+        double minVal; double maxVal; Point minLoc; Point maxLoc;
+        Point matchLoc;
+        minMaxLoc(result, &minVal, &maxVal, &minLoc, &maxLoc, Mat());
+
+        matchLoc = minLoc;
+
+        Mat img_display;
+        vassoio.copyTo(img_display);
+        rectangle(img_display, matchLoc, Point(matchLoc.x + src.cols, matchLoc.y + src.rows), Scalar::all(0), 2, 8, 0);
+        rectangle(result, matchLoc, Point(matchLoc.x + src.cols, matchLoc.y + src.rows), Scalar::all(0), 2, 8, 0);
+        name = "image_window" + to_string(i);
+        imshow(name, img_display);
+        name = "result_window" + to_string(i);
+        imshow(name, result);
 
         //KMEANS PREPROCESSING:
         Mat bilateral_img;
@@ -156,7 +293,7 @@ int main(int argc, char* argv[])
         name = "k=2_" + to_string(i);
         imshow(name, out2);
         int err2 = evaluate_kmeans(mean_shift_img, res2, 2);
-        err2 = err2 * 2;
+        //err2 = err2 * 2;
         cout << "Errore con 2 cluster = " << to_string(err2) << "\n";
 
         Mat res3 = kmeans(mean_shift_img, 3);
@@ -164,7 +301,7 @@ int main(int argc, char* argv[])
         name = "k=3_" + to_string(i);
         imshow(name, out3);
         int err3 = evaluate_kmeans(mean_shift_img, res3, 3);
-        err3 = err3 * 3;
+        //err3 = err3 * 3;
         cout << "Errore con 3 cluster = " << to_string(err3) << "\n";
 
         int best_k; //number of clusters that minimizes variance
@@ -179,6 +316,8 @@ int main(int argc, char* argv[])
         cout << to_string(best_k) << "\n";
 
         cout << to_string(findBestNumClusters(src)) << "\n";
+
+
 
 
         //FIND BEST K CORRECTLY
@@ -213,9 +352,12 @@ int main(int argc, char* argv[])
         //erode(res3, res3, Mat(), Point(-1, -1), 2, 1, 1);
         //Mat out3_dilated = print_clustered_img(res3);
         //imshow("res3_dilated", out3_dilated);
+        */
 
     }
 
+
+    /*
     vector<int> foods_founded(13);
     bool first_course_founded = false;
 
@@ -259,8 +401,7 @@ int main(int argc, char* argv[])
         }
         cout << "\n";
     }
-
-    
+    */
 
     waitKey(0);
 }

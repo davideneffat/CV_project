@@ -18,3 +18,6 @@ int evaluate_kmeans(cv::Mat src, cv::Mat clusterized, int numRegions);
 cv::Mat print_clustered_img(cv::Mat img);
 
 int findBestNumClusters(cv::Mat mean_shift_img);
+
+//////////////////////
+double calculateSilhouetteScore(const cv::Mat& labels, const cv::Mat& distances, int k);
