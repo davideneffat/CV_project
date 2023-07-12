@@ -34,76 +34,15 @@ void computeDescriptors(const string& folder, vector<Mat>& descriptors, Ptr<Feat
         Mat descriptor;
         detector->compute(image, keypoints, descriptor);
 
-        descriptor.convertTo(descriptor, CV_32F); // Convert to CV_32F format
-
         descriptors.push_back(descriptor);
     }
 }
 
-// Function to build a vocabulary using k-means clustering
-Mat buildVocabulary(const vector<Mat>& descriptors, int clusterCount)
+int main()
 {
-    Mat trainingData;
-    for (const auto& descriptor : descriptors) {
-        descriptor.convertTo(descriptor, CV_32F); // Convert to CV_32F format
-        trainingData.push_back(descriptor);
-    }
-
-    TermCriteria criteria(TermCriteria::EPS + TermCriteria::COUNT, 100, 0.01);
-    int attempts = 3;
-    int flags = KMEANS_PP_CENTERS;
-    Mat vocabulary;
-    kmeans(trainingData, clusterCount, vocabulary, criteria, attempts, flags);
-
-    return vocabulary;
-}
-
-// Function to compute histogram of visual words for an image
-Mat computeHistogram(const Mat& descriptors, const Mat& vocabulary)
-{
-    int clusterCount = vocabulary.rows;
-    Mat histogram = Mat::zeros(1, clusterCount, CV_32FC1);
-
-    for (int i = 0; i < descriptors.rows; ++i) {
-        Mat descriptor = descriptors.row(i);
-        descriptor.convertTo(descriptor, CV_32F); // Convert to CV_32F format
-
-        float minDistance = std::numeric_limits<float>::max();
-        int minIdx = -1;
-
-        for (int j = 0; j < clusterCount; ++j) {
-            Mat cluster = vocabulary.row(j);
-
-            if (descriptor.size() != cluster.size()) {
-                continue; // Skip if dimensions don't match
-            }
-
-            cluster.convertTo(cluster, CV_32F); // Convert to CV_32F format
-
-            float distance = norm(descriptor, cluster, NORM_L2);
-
-            if (distance < minDistance) {
-                minDistance = distance;
-                minIdx = j;
-            }
-        }
-
-        if (minIdx != -1) {
-            histogram.at<float>(0, minIdx) += 1.0f;
-        }
-    }
-
-    normalize(histogram, histogram, 1, NORM_L1);
-
-    return histogram;
-}
-
-
-int main(int argc, char* argv[])
-{
-    const int clusterCount = 100; // Number of clusters for vocabulary
     const string trainingFolder = "Food_leftover_dataset/dataset/BoW/";
-    const string testImage = "Food_leftover_dataset/dataset/patate/imgs/patate10.jpg";
+    const string testImage = "Food_leftover_dataset/start_imgs/hough_circles/1.jpg";
+    const int dictionarySize = 100; // Number of visual words in the vocabulary
 
     // Create SIFT detector
     Ptr<Feature2D> detector = SIFT::create();
@@ -111,34 +50,46 @@ int main(int argc, char* argv[])
     // Compute descriptors for training images
     vector<Mat> trainingDescriptors;
     computeDescriptors(trainingFolder, trainingDescriptors, detector);
-    cout << "Descriptors computed\n";
 
-    // Build vocabulary using k-means clustering
-    Mat vocabulary = buildVocabulary(trainingDescriptors, clusterCount);
-    cout << "Vocabulary created\n";
+    // Create BOWKMeansTrainer
+    Ptr<BOWKMeansTrainer> bowTrainer = makePtr<BOWKMeansTrainer>(dictionarySize);
 
-    // Train SVM classifier
-    Ptr<ml::SVM> svm = ml::SVM::create();
-    svm->setType(ml::SVM::C_SVC);
-    svm->setKernel(ml::SVM::RBF);
-    svm->setTermCriteria(TermCriteria(TermCriteria::MAX_ITER, 100, 1e-6));
+    // Add training descriptors to BOWTrainer
+    for (const auto& descriptor : trainingDescriptors) {
+        bowTrainer->add(descriptor);
+    }
 
-    cout << "Created SVM\n";
+    // Create vocabulary (dictionary) using clustering
+    Mat vocabulary = bowTrainer->cluster();
+
+    // Create BOW descriptor extractor
+    Ptr<DescriptorMatcher> descriptorMatcher = BFMatcher::create(NORM_L2);
+    Ptr<BOWImgDescriptorExtractor> bowExtractor = makePtr<BOWImgDescriptorExtractor>(detector, descriptorMatcher);
+    bowExtractor->setVocabulary(vocabulary);
+
+    // Prepare training data and labels
     Mat trainingData;
     Mat labels;
 
-    // Prepare training data and labels
-    for (int i = 0; i < trainingDescriptors.size(); ++i) {
-        Mat trainingDescriptor;
-        trainingDescriptors[i].convertTo(trainingDescriptor, CV_32F); // Convert to CV_32F format
-        Mat histogram = computeHistogram(trainingDescriptor, vocabulary);
-        trainingData.push_back(histogram);
-        labels.push_back(i / 4); // Assuming each class has 4 training images
+    int count = 0;
+    int class_count = 0;
+    for (const auto& descriptor : trainingDescriptors) {
+        Mat bowDescriptor;
+        bowExtractor->compute(descriptor, bowDescriptor);
+        trainingData.push_back(bowDescriptor);
+        // Assign label based on the class (e.g., 0 for class 1, 1 for class 2, etc.)
+        labels.push_back(class_count); // Update with appropriate labels for your dataset
+        count++;
+        if (count % 4 == 0)     //Each class have 4 images
+            class_count++;
     }
 
-    cout << "Training data and labels prepared\n";
+    // Train the classifier (e.g., using SVM)
+    Ptr<ml::SVM> svm = ml::SVM::create();
+    svm->setType(ml::SVM::C_SVC);
+    svm->setKernel(ml::SVM::RBF);
     svm->train(trainingData, ml::ROW_SAMPLE, labels);
-    cout << "Training complete\n";
+
     // Load test image
     Mat testImageGray = imread(testImage, IMREAD_GRAYSCALE);
     if (testImageGray.empty()) {
@@ -146,20 +97,38 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    // Compute descriptors for test image
+    // Compute descriptors for the test image
     vector<KeyPoint> keypoints;
     detector->detect(testImageGray, keypoints);
+
     Mat testDescriptor;
     detector->compute(testImageGray, keypoints, testDescriptor);
-    testDescriptor.convertTo(testDescriptor, CV_32F); // Convert to CV_32F format
 
-    // Compute histogram for test image
-    Mat testHistogram = computeHistogram(testDescriptor, vocabulary);
+    // Compute the BOW descriptor for the test image
+    Mat bowDescriptor;
+    bowExtractor->compute(testDescriptor, bowDescriptor);
 
     // Predict the class of the test image
-    float response = svm->predict(testHistogram);
+    float response = svm->predict(bowDescriptor);
 
     cout << "Predicted class: " << response << endl;
+
+
+    // Class probabilities
+    // Predict the class of the test image
+    float decisionValue = svm->predict(bowDescriptor, noArray(), ml::StatModel::Flags::RAW_OUTPUT);
+
+    // Compute class probabilities using Platt scaling
+    double A = 1.0;  // A parameter for Platt scaling
+    double B = 0.0;  // B parameter for Platt scaling
+    double probPositive = 1.0 / (1.0 + exp(A * decisionValue + B));
+    double probNegative = 1.0 - probPositive;
+
+    cout << "Predicted class: " << response << endl;
+    cout << "Class 0 Probability: " << probNegative << endl;
+    cout << "Class 1 Probability: " << probPositive << endl;
+
+
 
     return 0;
 
