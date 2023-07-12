@@ -13,142 +13,155 @@
 
 using namespace std;
 using namespace cv;
-using namespace cv::ml;
 
 
-const int numClasses = 1;
-const int numClusters = 100;
-const string trainingDataPath = "Food_leftover_dataset/dataset/fagioli/imgs/";  //training data
-const string vocabularyFile = "vocabulary.xml";
-const string svmModelFile = "svm_model.xml";
-
-void extractFeatures(const Mat& image, vector<KeyPoint>& keypoints, Mat& descriptors)
+// Function to compute descriptors for all images in a given folder
+void computeDescriptors(const string& folder, vector<Mat>& descriptors, Ptr<Feature2D>& detector)
 {
-    cv::Ptr<cv::FastFeatureDetector> fast = cv::FastFeatureDetector::create();
-    cv::Ptr<cv::SIFT> sift = cv::SIFT::create();
+    vector<String> filenames;
+    glob(folder, filenames);
 
-    fast->detect(image, keypoints);
-    //sift->compute(image, keypoints, descriptors);
-    cout << "extract sift:\n";
-    sift->detectAndCompute(image, cv::noArray(), keypoints, descriptors);
-    // Check if feature descriptors are empty
-    if (descriptors.empty())
-    {
-        std::cout << "No feature descriptors found." << std::endl;
-    }
-    cout << to_string(descriptors.cols) << "\n";
-}
+    for (const auto& filename : filenames) {
+        Mat image = imread(filename, IMREAD_GRAYSCALE);
+        if (image.empty()) {
+            cerr << "Failed to read image: " << filename << endl;
+            continue;
+        }
 
-void buildVocabulary(const vector<Mat>& trainingImages, Mat& vocabulary)
-{
-    Ptr<BOWKMeansTrainer> bowTrainer = makePtr<BOWKMeansTrainer>(numClusters);
-    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("FlannBased");
-    
-    for (const auto& image : trainingImages)
-    {
-        cout << "a\n";
         vector<KeyPoint> keypoints;
-        Mat descriptors;
-        extractFeatures(image, keypoints, descriptors);
-        cout << "b\n";
-        bowTrainer->add(descriptors);
-        cout << "c\n";
+        detector->detect(image, keypoints);
+
+        Mat descriptor;
+        detector->compute(image, keypoints, descriptor);
+
+        descriptor.convertTo(descriptor, CV_32F); // Convert to CV_32F format
+
+        descriptors.push_back(descriptor);
     }
-    
-    vocabulary = bowTrainer->cluster();
-    cout << "Clustering ended\n";
 }
 
-void computeBowDescriptor(const Mat& image, const Mat& vocabulary, Mat& bowDescriptor)
-{
-    Ptr<FeatureDetector> orb = ORB::create();
-    Ptr<DescriptorExtractor> orbDescriptorExtractor = ORB::create();
-
-    vector<KeyPoint> keypoints;
-    Mat descriptors;
-    orb->detect(image, keypoints);
-    orbDescriptorExtractor->compute(image, keypoints, descriptors);
-
-    // Create a BOWImgDescriptorExtractor with a BruteForce matcher
-    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce");
-    Ptr<BOWImgDescriptorExtractor> bowExtractor = makePtr<BOWImgDescriptorExtractor>(orbDescriptorExtractor, matcher);
-    bowExtractor->setVocabulary(vocabulary);
-
-    bowExtractor->compute(image, keypoints, bowDescriptor);
-}
-
-
-
-void trainClassifier(const vector<Mat>& trainingImages, const Mat& vocabulary, const vector<int>& labels, Ptr<cv::ml::SVM>& svm)
+// Function to build a vocabulary using k-means clustering
+Mat buildVocabulary(const vector<Mat>& descriptors, int clusterCount)
 {
     Mat trainingData;
-    vector<int> trainingLabels;
-
-    for (size_t i = 0; i < trainingImages.size(); i++)
-    {
-        Mat bowDescriptor;
-        computeBowDescriptor(trainingImages[i], vocabulary, bowDescriptor);
-        trainingData.push_back(bowDescriptor);
-        trainingLabels.push_back(labels[i]);
+    for (const auto& descriptor : descriptors) {
+        descriptor.convertTo(descriptor, CV_32F); // Convert to CV_32F format
+        trainingData.push_back(descriptor);
     }
 
-    Mat trainingDataFloat;
-    trainingData.convertTo(trainingDataFloat, CV_32FC1);
+    TermCriteria criteria(TermCriteria::EPS + TermCriteria::COUNT, 100, 0.01);
+    int attempts = 3;
+    int flags = KMEANS_PP_CENTERS;
+    Mat vocabulary;
+    kmeans(trainingData, clusterCount, vocabulary, criteria, attempts, flags);
 
-    svm = SVM::create();
-    svm->setType(SVM::C_SVC);
-    svm->setKernel(SVM::RBF);
-    svm->train(trainingDataFloat, ROW_SAMPLE, Mat(trainingLabels));
-    svm->save(svmModelFile);
+    return vocabulary;
 }
 
-int classifyImage(const Mat& image, const Mat& vocabulary, Ptr<cv::ml::SVM>& svm)
+// Function to compute histogram of visual words for an image
+Mat computeHistogram(const Mat& descriptors, const Mat& vocabulary)
 {
-    Mat bowDescriptor;
-    computeBowDescriptor(image, vocabulary, bowDescriptor);
-    Mat bowDescriptorFloat;
-    bowDescriptor.convertTo(bowDescriptorFloat, CV_32FC1);
+    int clusterCount = vocabulary.rows;
+    Mat histogram = Mat::zeros(1, clusterCount, CV_32FC1);
 
-    return svm->predict(bowDescriptorFloat);
+    for (int i = 0; i < descriptors.rows; ++i) {
+        Mat descriptor = descriptors.row(i);
+        descriptor.convertTo(descriptor, CV_32F); // Convert to CV_32F format
+
+        float minDistance = std::numeric_limits<float>::max();
+        int minIdx = -1;
+
+        for (int j = 0; j < clusterCount; ++j) {
+            Mat cluster = vocabulary.row(j);
+
+            if (descriptor.size() != cluster.size()) {
+                continue; // Skip if dimensions don't match
+            }
+
+            cluster.convertTo(cluster, CV_32F); // Convert to CV_32F format
+
+            float distance = norm(descriptor, cluster, NORM_L2);
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                minIdx = j;
+            }
+        }
+
+        if (minIdx != -1) {
+            histogram.at<float>(0, minIdx) += 1.0f;
+        }
+    }
+
+    normalize(histogram, histogram, 1, NORM_L1);
+
+    return histogram;
 }
-
 
 
 int main(int argc, char* argv[])
 {
-    // Step 1: Prepare the Training Data
-    vector<Mat> trainingImages;
-    vector<int> labels;
-    
-    for (int i = 0; i < numClasses; i++)
-    {
-        for (int j=0; j<5; j++)   //20 images training set
-        {
-            string imagePath = trainingDataPath + "fagioli" + to_string(j) + ".jpg";
-            Mat image = imread(imagePath, IMREAD_GRAYSCALE);
-            trainingImages.push_back(image);
-            labels.push_back(i + 1);
-        }
-    }
-    cout << "AAAAAAAAAAAAAAA\n";
-    // Step 2: Feature Extraction using FAST
+    const int clusterCount = 100; // Number of clusters for vocabulary
+    const string trainingFolder = "Food_leftover_dataset/dataset/BoW/";
+    const string testImage = "Food_leftover_dataset/dataset/patate/imgs/patate10.jpg";
 
-    // Step 3: Build the Visual Vocabulary (Bag of Words)
-    Mat vocabulary;
-    buildVocabulary(trainingImages, vocabulary);
-    cout << "11111111111111\n";
-    FileStorage fs(vocabularyFile, FileStorage::WRITE);
-    fs << "vocabulary" << vocabulary;
-    fs.release();
-    cout << "BBBBBBBBBBBBBBB\n";
-    // Step 4: Train the Classifier
-    Ptr<cv::ml::SVM> svm;
-    trainClassifier(trainingImages, vocabulary, labels, svm);
-    cout << "CCCCCCCCCCCCCCCCCCC\n";
-    // Step 5: Classify New Images
-    Mat testImage = imread("Food_leftover_dataset/dataset/fagioli/imgs/fagioli20.jpg", IMREAD_GRAYSCALE);
-    int predictedClass = classifyImage(testImage, vocabulary, svm);
-    cout << "Predicted class: " << to_string(predictedClass) << endl;
+    // Create SIFT detector
+    Ptr<Feature2D> detector = SIFT::create();
+
+    // Compute descriptors for training images
+    vector<Mat> trainingDescriptors;
+    computeDescriptors(trainingFolder, trainingDescriptors, detector);
+    cout << "Descriptors computed\n";
+
+    // Build vocabulary using k-means clustering
+    Mat vocabulary = buildVocabulary(trainingDescriptors, clusterCount);
+    cout << "Vocabulary created\n";
+
+    // Train SVM classifier
+    Ptr<ml::SVM> svm = ml::SVM::create();
+    svm->setType(ml::SVM::C_SVC);
+    svm->setKernel(ml::SVM::RBF);
+    svm->setTermCriteria(TermCriteria(TermCriteria::MAX_ITER, 100, 1e-6));
+
+    cout << "Created SVM\n";
+    Mat trainingData;
+    Mat labels;
+
+    // Prepare training data and labels
+    for (int i = 0; i < trainingDescriptors.size(); ++i) {
+        Mat trainingDescriptor;
+        trainingDescriptors[i].convertTo(trainingDescriptor, CV_32F); // Convert to CV_32F format
+        Mat histogram = computeHistogram(trainingDescriptor, vocabulary);
+        trainingData.push_back(histogram);
+        labels.push_back(i / 4); // Assuming each class has 4 training images
+    }
+
+    cout << "Training data and labels prepared\n";
+    svm->train(trainingData, ml::ROW_SAMPLE, labels);
+    cout << "Training complete\n";
+    // Load test image
+    Mat testImageGray = imread(testImage, IMREAD_GRAYSCALE);
+    if (testImageGray.empty()) {
+        cerr << "Failed to read test image: " << testImage << endl;
+        return -1;
+    }
+
+    // Compute descriptors for test image
+    vector<KeyPoint> keypoints;
+    detector->detect(testImageGray, keypoints);
+    Mat testDescriptor;
+    detector->compute(testImageGray, keypoints, testDescriptor);
+    testDescriptor.convertTo(testDescriptor, CV_32F); // Convert to CV_32F format
+
+    // Compute histogram for test image
+    Mat testHistogram = computeHistogram(testDescriptor, vocabulary);
+
+    // Predict the class of the test image
+    float response = svm->predict(testHistogram);
+
+    cout << "Predicted class: " << response << endl;
+
+    return 0;
 
 
 
