@@ -15,128 +15,15 @@ using namespace std;
 using namespace cv;
 
 
-// Function to compute descriptors for all images in a given folder
-void computeDescriptors(const string& folder, vector<Mat>& descriptors, Ptr<Feature2D>& detector)
-{
-    vector<String> filenames;
-    glob(folder, filenames);
 
-    for (const auto& filename : filenames) {
-        Mat image = imread(filename, IMREAD_GRAYSCALE);
-        if (image.empty()) {
-            cerr << "Failed to read image: " << filename << endl;
-            continue;
-        }
-
-        vector<KeyPoint> keypoints;
-        detector->detect(image, keypoints);
-
-        Mat descriptor;
-        detector->compute(image, keypoints, descriptor);
-
-        descriptors.push_back(descriptor);
-    }
-}
 
 int main()
 {
-    const string trainingFolder = "Food_leftover_dataset/dataset/BoW/";
-    const string testImage = "Food_leftover_dataset/start_imgs/hough_circles/1.jpg";
-    const int dictionarySize = 100; // Number of visual words in the vocabulary
-
-    // Create SIFT detector
-    Ptr<Feature2D> detector = SIFT::create();
-
-    // Compute descriptors for training images
-    vector<Mat> trainingDescriptors;
-    computeDescriptors(trainingFolder, trainingDescriptors, detector);
-
-    // Create BOWKMeansTrainer
-    Ptr<BOWKMeansTrainer> bowTrainer = makePtr<BOWKMeansTrainer>(dictionarySize);
-
-    // Add training descriptors to BOWTrainer
-    for (const auto& descriptor : trainingDescriptors) {
-        bowTrainer->add(descriptor);
-    }
-
-    // Create vocabulary (dictionary) using clustering
-    Mat vocabulary = bowTrainer->cluster();
-
-    // Create BOW descriptor extractor
-    Ptr<DescriptorMatcher> descriptorMatcher = BFMatcher::create(NORM_L2);
-    Ptr<BOWImgDescriptorExtractor> bowExtractor = makePtr<BOWImgDescriptorExtractor>(detector, descriptorMatcher);
-    bowExtractor->setVocabulary(vocabulary);
-
-    // Prepare training data and labels
-    Mat trainingData;
-    Mat labels;
-
-    int count = 0;
-    int class_count = 0;
-    for (const auto& descriptor : trainingDescriptors) {
-        Mat bowDescriptor;
-        bowExtractor->compute(descriptor, bowDescriptor);
-        trainingData.push_back(bowDescriptor);
-        // Assign label based on the class (e.g., 0 for class 1, 1 for class 2, etc.)
-        labels.push_back(class_count); // Update with appropriate labels for your dataset
-        count++;
-        if (count % 4 == 0)     //Each class have 4 images
-            class_count++;
-    }
-
-    // Train the classifier (e.g., using SVM)
-    Ptr<ml::SVM> svm = ml::SVM::create();
-    svm->setType(ml::SVM::C_SVC);
-    svm->setKernel(ml::SVM::RBF);
-    svm->train(trainingData, ml::ROW_SAMPLE, labels);
-
-    // Load test image
-    Mat testImageGray = imread(testImage, IMREAD_GRAYSCALE);
-    if (testImageGray.empty()) {
-        cerr << "Failed to read test image: " << testImage << endl;
-        return -1;
-    }
-
-    // Compute descriptors for the test image
-    vector<KeyPoint> keypoints;
-    detector->detect(testImageGray, keypoints);
-
-    Mat testDescriptor;
-    detector->compute(testImageGray, keypoints, testDescriptor);
-
-    // Compute the BOW descriptor for the test image
-    Mat bowDescriptor;
-    bowExtractor->compute(testDescriptor, bowDescriptor);
-
-    // Predict the class of the test image
-    float response = svm->predict(bowDescriptor);
-
-    cout << "Predicted class: " << response << endl;
-
-
-    // Class probabilities
-    // Predict the class of the test image
-    float decisionValue = svm->predict(bowDescriptor, noArray(), ml::StatModel::Flags::RAW_OUTPUT);
-
-    // Compute class probabilities using Platt scaling
-    double A = 1.0;  // A parameter for Platt scaling
-    double B = 0.0;  // B parameter for Platt scaling
-    double probPositive = 1.0 / (1.0 + exp(A * decisionValue + B));
-    double probNegative = 1.0 - probPositive;
-
-    cout << "Predicted class: " << response << endl;
-    cout << "Class 0 Probability: " << probNegative << endl;
-    cout << "Class 1 Probability: " << probPositive << endl;
+    
 
 
 
-    return 0;
-
-
-
-
-
-
+    //FAST E SIFT DETECTOR E DESCRIPTOR
     // Load the two input images
     /*cv::Mat image1 = cv::imread("Food_leftover_dataset/tray1/food_image.jpg", cv::IMREAD_GRAYSCALE);
     cv::Mat image2 = cv::imread("Food_leftover_dataset/tray1/leftover1.jpg", cv::IMREAD_GRAYSCALE);
@@ -196,10 +83,21 @@ int main()
     
 
 
+    string path = "Food_leftover_dataset/start_imgs/imgs/im4.jpg";
+    imshow("start img", imread(path));
 
-
-    vector<Mat> dishes = hough_transform("Food_leftover_dataset/start_imgs/imgs/im1.jpg");
+    vector<Mat> dishes = hough_transform(path);
     cout << "Finded " << to_string(dishes.size()) << " dishes\n";
+
+    vector<Mat> insalate = find_salad(path);
+    cout << "Finded " << to_string(insalate.size()) << " insalate\n";
+    for (int i = 0; i < insalate.size(); i++) {
+        Mat src = insalate[i];
+        string name = "insalata src" + to_string(i);
+        imshow(name, src);
+    }
+
+    vector<vector<float>> foods;  //n=1 if food n present
 
 
 
@@ -209,59 +107,58 @@ int main()
         string name = "input src" + to_string(i);
         imshow(name, src);
 
+        vector<float> foods_dish(14);
 
-
-        /*
-        Mat vassoio = imread("Food_leftover_dataset/start_imgs/imgs/im1.jpg");
-        Mat result;
-        matchTemplate(vassoio, src, result, TM_SQDIFF);
-        normalize(result, result, 0, 1, NORM_MINMAX, -1, Mat());
-        double minVal; double maxVal; Point minLoc; Point maxLoc;
-        Point matchLoc;
-        minMaxLoc(result, &minVal, &maxVal, &minLoc, &maxLoc, Mat());
-
-        matchLoc = minLoc;
-
-        Mat img_display;
-        vassoio.copyTo(img_display);
-        rectangle(img_display, matchLoc, Point(matchLoc.x + src.cols, matchLoc.y + src.rows), Scalar::all(0), 2, 8, 0);
-        rectangle(result, matchLoc, Point(matchLoc.x + src.cols, matchLoc.y + src.rows), Scalar::all(0), 2, 8, 0);
-        name = "image_window" + to_string(i);
-        imshow(name, img_display);
-        name = "result_window" + to_string(i);
-        imshow(name, result);
-
-        //KMEANS PREPROCESSING:
-        Mat bilateral_img;
-        bilateralFilter(src, bilateral_img, 20, 200, 250, BORDER_DEFAULT);    //apply bilateral filter
-        name = "Bilateral filter" + to_string(i);
-        imshow(name, bilateral_img);
-
-        Mat mean_shift_img;
-        pyrMeanShiftFiltering(bilateral_img, mean_shift_img, 32, 16, 3); //apply mean-shift
-        //pyrMeanShiftFiltering(bilateral_img, mean_shift_img, 20, 45, 3); //apply mean-shift
-        name = "Mean-shift" + to_string(i);
+        Mat mean_shift_img = preprocess(src);   //image preprocessing
+        name = "preprocessed" + to_string(i);
         imshow(name, mean_shift_img);
 
-        //Remove the dish (white pixels):
-        Scalar lowerBound = Scalar(0, 0, 0); // H=colore[0,180], S=bianco-colore[0,255], V=nero-colore[0,255] to remove plate (bianco)
-        Scalar upperBound = Scalar(255, 55, 255);
         Mat hsv;
         cvtColor(mean_shift_img, hsv, COLOR_BGR2HSV);  //transform from RGB to HSV
-        Mat mask;
-        inRange(hsv, lowerBound, upperBound, mask);    //filter pixels in range
-
-        mean_shift_img.setTo(Scalar(0, 0, 0), mask);
-        name = "plate removal" + to_string(i);
-        imshow(name, mean_shift_img);
 
 
-        erode(mean_shift_img, mean_shift_img, Mat(), Point(-1, -1), 2, 1, 1);   //remove small isolated parts
-        dilate(mean_shift_img, mean_shift_img, Mat(), Point(-1, -1), 2, 1, 1);
-        name = "erosion+dilation" + to_string(i);
-        imshow(name, mean_shift_img);
+        Mat res;
+        res = find_pasta(hsv);
+        cout << "num pasta = " << to_string(count_pixels(res, mean_shift_img)) << "\n";
+        foods_dish[0] = count_pixels(res, mean_shift_img);
+        res = find_pesto(hsv);
+        cout << "num pesto = " << to_string(count_pixels(res, mean_shift_img)) << "\n";
+        foods_dish[1] = count_pixels(res, mean_shift_img);
+        res = find_tomato(hsv);
+        cout << "num pasta tomate = " << to_string(count_pixels(res, mean_shift_img)) << "\n";
+        foods_dish[2] = count_pixels(res, mean_shift_img);
+        res = find_meat_sauce(hsv);
+        cout << "num pasta ragu = " << to_string(count_pixels(res, mean_shift_img)) << "\n";
+        foods_dish[3] = count_pixels(res, mean_shift_img);
+        res = find_pasta_clams_mussels(hsv);
+        cout << "num pasta clams mussels = " << to_string(count_pixels(res, mean_shift_img)) << "\n";
+        foods_dish[4] = count_pixels(res, mean_shift_img);
+        res = find_rice(hsv);
+        cout << "num rice = " << to_string(count_pixels(res, mean_shift_img)) << "\n";
+        foods_dish[5] = count_pixels(res, mean_shift_img);
+        res = find_grilled_pork_cutlet(hsv);
+        cout << "num grilled pork cutlet = " << to_string(count_pixels(res, mean_shift_img)) << "\n";
+        foods_dish[6] = count_pixels(res, mean_shift_img);
+        res = find_fish_cutlet(hsv);
+        cout << "num fish cutlet = " << to_string(count_pixels(res, mean_shift_img)) << "\n";
+        foods_dish[7] = count_pixels(res, mean_shift_img);
+        res = find_rabbit(hsv);
+        cout << "num rabbit = " << to_string(count_pixels(res, mean_shift_img)) << "\n";
+        foods_dish[8] = count_pixels(res, mean_shift_img);
+        res = find_seafood_salad(hsv);
+        cout << "num seafood salad = " << to_string(count_pixels(res, mean_shift_img)) << "\n";
+        foods_dish[9] = count_pixels(res, mean_shift_img);
+        res = find_beans(hsv);
+        cout << "num beans = " << to_string(count_pixels(res, mean_shift_img)) << "\n";
+        foods_dish[10] = count_pixels(res, mean_shift_img);
+        res = find_potatoes(hsv);
+        cout << "num potatoes = " << to_string(count_pixels(res, mean_shift_img)) << "\n";
+        foods_dish[11] = count_pixels(res, mean_shift_img);
 
 
+
+        foods.push_back(foods_dish);
+        /*
         //apply kmeans with k=1,2,3 and find best value for k
         Mat res1 = kmeans(mean_shift_img, 1);
         Mat out1 = print_clustered_img(res1);
@@ -297,44 +194,10 @@ int main()
 
         cout << to_string(best_k) << "\n";
 
-        cout << to_string(findBestNumClusters(src)) << "\n";
+        cout << to_string(findBestNumClusters(src)) << "\n";*/
 
 
 
-
-        //FIND BEST K CORRECTLY
-        Mat clustered = kmeans(mean_shift_img, best_k);
-        Mat clustered_print = print_clustered_img(clustered);
-        name = "Best_clustering_" + to_string(i);
-        imshow(name, clustered_print);
-
-        vector<float>  mean(best_k, 0);   //contains mean H (hsv) value for each cluster, mean[0]=mean val for cluster 1, mean[1]=mean val for cluster 2...
-        vector<int> count(best_k, 0);  //count number of pixels for each label to produce mean
-
-        Mat src_hsv;    //we use hsv image of src, not of mean_shift as before
-        cvtColor(src, src_hsv, COLOR_BGR2HSV);  //transform from RGB to HSV
-
-        for (int i = 0; i < clustered.rows; i++) {
-            for (int j = 0; j < clustered.cols; j++) {
-                int label = clustered.at<Vec3b>(i, j)[0];
-                if (label != 0) {   //don't take into account background (label = 0)
-                    mean[label - 1] += src_hsv.at<Vec3b>(i, j)[0];  //take value H of hsv image
-                    count[label - 1] += 1;
-                }
-            }
-        }
-
-        for (int i = 0; i < mean.size(); i++) { //calculate means
-            mean[i] = mean[i] / count[i];
-        }
-
-        colors.push_back(mean);
-
-        //dilate(res3, res3, Mat(), Point(-1, -1), 2, 1, 1);
-        //erode(res3, res3, Mat(), Point(-1, -1), 2, 1, 1);
-        //Mat out3_dilated = print_clustered_img(res3);
-        //imshow("res3_dilated", out3_dilated);
-        */
 
     }
 
@@ -384,6 +247,216 @@ int main()
         cout << "\n";
     }
     */
+    for (int i = 0; i < foods.size(); i++) {
+        for (int j = 0; j < foods[i].size(); j++) {
+            cout << to_string(foods[i][j]) << "  ";
+        }
+        cout << "\n";
+    }
+
+    for (int i = 0; i < foods.size(); i++) {
+        if (foods[i][0] > 0.4) {
+            foods[i][1] = foods[i][0] + foods[i][1];    //pasta + pesto
+            foods[i][2] = foods[i][0] + foods[i][2];    //pasta + tomate
+            foods[i][3] = foods[i][0] + foods[i][3];    //pasta + meat sauce
+            foods[i][0] = 0.0;
+        }
+        else if (foods[i][0] < 0.4) {
+            foods[i][1] = 0.0;    //pasta + pesto
+            foods[i][2] = 0.0;    //pasta + tomate
+            foods[i][3] = 0.0;    //pasta + meat sauce
+            foods[i][0] = 0.0;
+        }
+        else if((foods[i][1] < 0.1) && (foods[i][2] < 0.1) && (foods[i][3] < 0.1))
+            foods[i][0] = 0.0;
+    }
+
+    vector<float> food_highest_pixels;
+    vector<int> food_highest_id;
+    //find primo:
+    for (int i = 0; i < foods.size(); i++) {
+        float max = 0;
+        int id = 0;
+        for (int j = 0; j < 6; j++) {
+            if (foods[i][j] > max) {
+                max = foods[i][j];
+                id = j;
+            }
+        }
+        food_highest_pixels.push_back(max);
+        food_highest_id.push_back(id);
+    }
+
+    for (int i = 0; i < food_highest_id.size(); i++) {
+        cout << to_string(food_highest_id[i]) << " " << to_string(food_highest_pixels[i]) << "\n";
+    }
+    
+    int first_dish_img = 0;
+
+    float max = 0;
+    int id = 0;
+    for (int i = 0; i < food_highest_id.size(); i++) {
+        if (food_highest_pixels[i] > max) {
+            max = food_highest_pixels[i];
+            id = food_highest_id[i];
+            first_dish_img = i;
+        }
+    }
+    cout << "First dish = " << to_string(id) << " with quantity = " << to_string(max) << "\n";
+
+
+    int second_dish_img;
+    if (first_dish_img == 0)
+        second_dish_img = 1;    //there are at least 2 dishes
+    else
+        second_dish_img = 0;
+
+
+    vector<int> food_pixels(14);
+    Mat first = preprocess(dishes[first_dish_img]);
+    food_pixels[id] = count_pixels_not_zero(first);    //update vector with number of pixels for first dish
+
+
+
+
+
+    //find secondo e contorni:
+
+    Mat second = preprocess(dishes[second_dish_img]);
+
+    for (int i = 0; i < foods.size(); i++) {
+        if (i == second_dish_img) {     //skip first dishes already founded
+            if ((foods[i][10] > 0.15) && (foods[i][11] > 0.15)) { //beans and potatoes present
+                cout << "Un secondo e due contorni trovati\n";
+                Mat clustered = kmeans(second, 3);
+                imshow("secondo", print_clustered_img(clustered));
+                vector<float> mean_colors = calc_mean_cluster_color(second, clustered, 3);
+                
+                int patate;
+                int fagioli;
+                int altro;
+
+                if ((mean_colors[1] > mean_colors[2]) && (mean_colors[1] > mean_colors[3]))  //patate con label 1
+                    patate = 1;
+                else if ((mean_colors[2] > mean_colors[1]) && (mean_colors[2] > mean_colors[3]))  //patate con label 2
+                    patate = 2;
+                else if ((mean_colors[3] > mean_colors[1]) && (mean_colors[3] > mean_colors[2]))  //patate con label 3
+                    patate = 3;
+                food_pixels[11] = count_pixels_with_value_n(clustered, patate);    //update vector with number of pixels for patate
+
+                if ((mean_colors[1] < mean_colors[2]) && (mean_colors[1] < mean_colors[3]))  //fagioli con label 1
+                    fagioli = 1;
+                else if ((mean_colors[2] < mean_colors[1]) && (mean_colors[2] < mean_colors[3]))  //fagioli con label 2
+                    fagioli = 2;
+                else if ((mean_colors[3] < mean_colors[1]) && (mean_colors[3] < mean_colors[2]))  //fagioli con label 3
+                    fagioli = 3;
+                food_pixels[10] = count_pixels_with_value_n(clustered, fagioli);    //update vector with number of pixels for fagioli
+                
+                altro = 6 - patate - fagioli;
+
+                
+                float pork_pixels = foods[second_dish_img][6];
+                float fish_pixels = foods[second_dish_img][7];
+                float rabbit_pixels = foods[second_dish_img][8];
+                float seafood_pixels = foods[second_dish_img][9];
+                if ((pork_pixels > fish_pixels) && (pork_pixels > rabbit_pixels) && (pork_pixels > seafood_pixels))
+                    food_pixels[6] = count_pixels_with_value_n(clustered, altro);    //update vector with number of pixels for second dish
+                if ((fish_pixels > pork_pixels) && (fish_pixels > rabbit_pixels) && (fish_pixels > seafood_pixels))
+                    food_pixels[7] = count_pixels_with_value_n(clustered, altro);    //update vector with number of pixels for second dish
+                if ((rabbit_pixels > pork_pixels) && (rabbit_pixels > fish_pixels) && (rabbit_pixels > seafood_pixels))
+                    food_pixels[8] = count_pixels_with_value_n(clustered, altro);    //update vector with number of pixels for second dish
+                if ((seafood_pixels > pork_pixels) && (seafood_pixels > fish_pixels) && (seafood_pixels > rabbit_pixels))
+                    food_pixels[9] = count_pixels_with_value_n(clustered, altro);    //update vector with number of pixels for second dish
+            }
+
+            else if (foods[i][10] > 0.3) {  //beans present
+                cout << "Un secondo e fagioli di contorno trovati\n";
+                Mat clustered = kmeans(second, 2);
+                imshow("secondo", print_clustered_img(clustered));
+                vector<float> mean_colors = calc_mean_cluster_color(second, clustered, 2);
+
+                int fagioli;
+                int altro;
+
+                if (mean_colors[1] < mean_colors[2])
+                    fagioli = 1;
+                if (mean_colors[1] > mean_colors[2])
+                    fagioli = 2;
+                food_pixels[10] = count_pixels_with_value_n(clustered, fagioli);    //update vector with number of pixels for fagioli
+
+                altro = 3 - fagioli;
+
+                float pork_pixels = foods[second_dish_img][6];
+                float fish_pixels = foods[second_dish_img][7];
+                float rabbit_pixels = foods[second_dish_img][8];
+                float seafood_pixels = foods[second_dish_img][9];
+                if ((pork_pixels > fish_pixels) && (pork_pixels > rabbit_pixels) && (pork_pixels > seafood_pixels))
+                    food_pixels[6] = count_pixels_with_value_n(clustered, altro);    //update vector with number of pixels for second dish
+                if ((fish_pixels > pork_pixels) && (fish_pixels > rabbit_pixels) && (fish_pixels > seafood_pixels))
+                    food_pixels[7] = count_pixels_with_value_n(clustered, altro);    //update vector with number of pixels for second dish
+                if ((rabbit_pixels > pork_pixels) && (rabbit_pixels > fish_pixels) && (rabbit_pixels > seafood_pixels))
+                    food_pixels[8] = count_pixels_with_value_n(clustered, altro);    //update vector with number of pixels for second dish
+                if ((seafood_pixels > pork_pixels) && (seafood_pixels > fish_pixels) && (seafood_pixels > rabbit_pixels))
+                    food_pixels[9] = count_pixels_with_value_n(clustered, altro);    //update vector with number of pixels for second dish
+            }
+
+            else if (foods[i][11] > 0.3) {  //potatoes present
+                cout << "Un secondo e patate di contorno trovati\n";
+                Mat clustered = kmeans(second, 2);
+                imshow("secondo", print_clustered_img(clustered));
+                vector<float> mean_colors = calc_mean_cluster_color(second, clustered, 2);
+
+                int patate;
+                int altro;
+
+                if (mean_colors[1] > mean_colors[2])
+                    patate = 1;
+                if (mean_colors[1] < mean_colors[2])
+                    patate = 2;
+                food_pixels[11] = count_pixels_with_value_n(clustered, patate);    //update vector with number of pixels for fagioli
+
+                altro = 3 - patate;
+
+                float pork_pixels = foods[second_dish_img][6];
+                float fish_pixels = foods[second_dish_img][7];
+                float rabbit_pixels = foods[second_dish_img][8];
+                float seafood_pixels = foods[second_dish_img][9];
+                if ((pork_pixels > fish_pixels) && (pork_pixels > rabbit_pixels) && (pork_pixels > seafood_pixels))
+                    food_pixels[6] = count_pixels_with_value_n(clustered, altro);    //update vector with number of pixels for second dish
+                if ((fish_pixels > pork_pixels) && (fish_pixels > rabbit_pixels) && (fish_pixels > seafood_pixels))
+                    food_pixels[7] = count_pixels_with_value_n(clustered, altro);    //update vector with number of pixels for second dish
+                if ((rabbit_pixels > pork_pixels) && (rabbit_pixels > fish_pixels) && (rabbit_pixels > seafood_pixels))
+                    food_pixels[8] = count_pixels_with_value_n(clustered, altro);    //update vector with number of pixels for second dish
+                if ((seafood_pixels > pork_pixels) && (seafood_pixels > fish_pixels) && (seafood_pixels > rabbit_pixels))
+                    food_pixels[9] = count_pixels_with_value_n(clustered, altro);    //update vector with number of pixels for second dish
+            }
+            else {  //nessun contorno, solo secondo
+                cout << "Un secondo e nessun contorno trovati\n";
+                Mat clustered = kmeans(second, 1);
+                imshow("secondo", print_clustered_img(clustered));
+
+                float pork_pixels = foods[second_dish_img][6];
+                float fish_pixels = foods[second_dish_img][7];
+                float rabbit_pixels = foods[second_dish_img][8];
+                float seafood_pixels = foods[second_dish_img][9];
+                if((pork_pixels > fish_pixels) && (pork_pixels > rabbit_pixels) && (pork_pixels > seafood_pixels))
+                    food_pixels[6] = count_cluster_pixels(clustered);    //update vector with number of pixels for second dish
+                if ((fish_pixels > pork_pixels) && (fish_pixels > rabbit_pixels) && (fish_pixels > seafood_pixels))
+                    food_pixels[7] = count_cluster_pixels(clustered);    //update vector with number of pixels for second dish
+                if ((rabbit_pixels > pork_pixels) && (rabbit_pixels > fish_pixels) && (rabbit_pixels > seafood_pixels))
+                    food_pixels[8] = count_cluster_pixels(clustered);    //update vector with number of pixels for second dish
+                if ((seafood_pixels > pork_pixels) && (seafood_pixels > fish_pixels) && (seafood_pixels > rabbit_pixels))
+                    food_pixels[9] = count_cluster_pixels(clustered);    //update vector with number of pixels for second dish
+            }
+        }
+    }
+
+
+    for (int i = 0; i < food_pixels.size(); i++) {
+        cout << to_string(i)<< "= " << to_string(food_pixels[i]) << "  ";
+    }
+    cout << "\n";
+
 
     waitKey(0);
 }
