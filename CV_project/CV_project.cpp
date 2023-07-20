@@ -19,7 +19,7 @@ int main()
 {
     
 
-    string path = "Food_leftover_dataset/tray1/";  //image at begin of meal
+    string path = "Food_leftover_dataset/tray7/";  //image at begin of meal
 
     Mat source = imread(path+ "food_image.jpg");    //image at begin of meal
     Mat end_source = imread(path + "leftover2.jpg");    //image at end of meal
@@ -61,6 +61,7 @@ int main()
         cvtColor(mean_shift_img, hsv, COLOR_BGR2HSV);  //transform from RGB to HSV
 
 
+        //find probability of each food:
         Mat res;
         res = find_pasta(hsv);
         foods_dish[0] = count_pixels(res, mean_shift_img);
@@ -102,6 +103,7 @@ int main()
     }
 
 
+    //filter small amount of pasta to avoid false positive
     for (int i = 0; i < foods.size(); i++) {
         if (foods[i][0] > 0.4) {
             foods[i][1] = foods[i][0] + foods[i][1];    //pasta + pesto
@@ -121,6 +123,7 @@ int main()
 
     vector<float> food_highest_pixels;
     vector<int> food_highest_id;
+
 
 
     //find primo:
@@ -201,6 +204,8 @@ int main()
     }
 
     template_img = template_img(Range(y_begin, y_end), Range(x_begin, x_end));
+
+    cluster_primo = cluster_primo(Range(y_begin, y_end), Range(x_begin, x_end));
 
     Point matchLoc = food_recognition_rectangle(source, template_img);
     rectangle(source, matchLoc, Point(matchLoc.x + template_img.cols, matchLoc.y + template_img.rows), Vec3b(255, 0, 0), 2, 8, 0);
@@ -541,7 +546,7 @@ int main()
 
 
     for (int i = 0; i < food_pixels.size(); i++) {
-        cout << to_string(i)<< "= " << to_string(food_pixels[i]) << "  ";
+        cout << "ID=" << to_string(i) << ": " << to_string(food_pixels[i]) << " pixels  ";
     }
     cout << "\n";
 
@@ -691,6 +696,41 @@ int main()
 
 
     template_img = end_dishes[end_first_dish_img];
+
+    //let's cut template to remove black pixels around it
+    x_begin = 0;
+    x_end = end_first.cols;
+    y_begin = 0;
+    y_end = end_first.rows;
+    for (int i = 0; i < end_first.rows; i++) {
+        for (int j = 0; j < end_first.cols; j++) {
+            if (end_first.at<Vec3b>(i, j) != Vec3b(0, 0, 0))
+                y_end = i;
+        }
+    }
+    for (int j = 0; j < end_first.cols; j++) {
+        for (int i = 0; i < end_first.rows; i++) {
+            if (end_first.at<Vec3b>(i, j) != Vec3b(0, 0, 0))
+                x_end = j;
+        }
+    }
+    for (int i = end_first.rows - 1; i >= 0; i--) {
+        for (int j = end_first.cols - 1; j >= 0; j--) {
+            if (end_first.at<Vec3b>(i, j) != Vec3b(0, 0, 0))
+                y_begin = i;
+        }
+    }
+    for (int j = end_first.cols - 1; j >= 0; j--) {
+        for (int i = end_first.rows - 1; i >= 0; i--) {
+            if (end_first.at<Vec3b>(i, j) != Vec3b(0, 0, 0))
+                x_begin = j;
+        }
+    }
+
+    template_img = template_img(Range(y_begin, y_end), Range(x_begin, x_end));
+
+    cluster_primo = cluster_primo(Range(y_begin, y_end), Range(x_begin, x_end));
+
     matchLoc = food_recognition_rectangle(end_source, template_img);
     rectangle(end_source, matchLoc, Point(matchLoc.x + template_img.cols, matchLoc.y + template_img.rows), Vec3b(255, 0, 0), 2, 8, 0);
 
@@ -704,6 +744,8 @@ int main()
             }
         }
     }
+
+
 
 
     bool end_secondo = false;   //true if second is not completely eaten
@@ -1112,7 +1154,8 @@ int main()
 
 
     for (int i = 0; i < end_food_pixels.size(); i++) {
-        cout << to_string(i) << "= " << to_string(end_food_pixels[i]) << "  ";
+        cout << "ID=" << to_string(i) << ": " << to_string(end_food_pixels[i]) << " pixels  ";
+
     }
     cout << "\n";
 

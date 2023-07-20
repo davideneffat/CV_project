@@ -1,7 +1,6 @@
 #include <opencv2\opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
-#include "watershed.h"
 
 using namespace std;
 using namespace cv;
