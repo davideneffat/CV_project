@@ -15,13 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CV_project.cpp">
-      <Filter>File di origine</Filter>
-    </ClCompile>
     <ClCompile Include="Image_processing.cpp">
       <Filter>File di origine</Filter>
     </ClCompile>
     <ClCompile Include="watershed.cpp">
+      <Filter>File di origine</Filter>
+    </ClCompile>
+    <ClCompile Include="CV_project.cpp">
       <Filter>File di origine</Filter>
     </ClCompile>
   </ItemGroup>

@@ -134,11 +134,9 @@
   <ItemGroup>
     <ClCompile Include="CV_project.cpp" />
     <ClCompile Include="Image_processing.cpp" />
-    <ClCompile Include="watershed.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Image_processing.h" />
-    <ClInclude Include="watershed.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,8 +1,13 @@
 #pragma once
 #include <opencv2\opencv.hpp>
 
-std::vector<cv::Mat> hough_transform(cv::String img_path);
-std::vector<cv::Mat> find_salad(cv::String img_path);
+std::vector<cv::Mat> hough_transform(cv::Mat img);
+std::vector<cv::Mat> find_salad(cv::Mat img);
+int find_remaining_salad(cv::Mat image);
+
+cv::Point food_recognition_rectangle(cv::Mat source, cv::Mat template_img);
+
+std::vector<cv::Point> calculate_template_from_cluster(cv::Mat source, cv::Mat clustered, cv::Mat dish, int label);
 
 float count_pixels(cv::Mat img, cv::Mat mean_shift_img);
 int count_pixels_not_zero(cv::Mat img);
@@ -29,8 +34,7 @@ cv::Mat find_potatoes(cv::Mat image);
 
 
 cv::Mat kmeans(cv::Mat image, int numRegions);
-int evaluate_kmeans(cv::Mat src, cv::Mat clusterized, int numRegions);
+
 cv::Mat print_clustered_img(cv::Mat img);
 
-int findBestNumClusters(cv::Mat mean_shift_img);
 
