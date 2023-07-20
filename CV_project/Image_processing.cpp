@@ -223,7 +223,7 @@ vector<Mat> find_salad(Mat img) {
     // Create a vector for detected circles
     vector<Vec3f>  circles;
     // Apply Hough Transform
-    HoughCircles(img_blur, circles, HOUGH_GRADIENT, 1, img2.rows / 2, 100, 50, 150, 230);
+    HoughCircles(img_blur, circles, HOUGH_GRADIENT, 1, img2.rows / 2, 100, 45, 150, 230);
 
     vector<Mat> dishes;
     // Draw detected circles

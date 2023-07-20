@@ -1,0 +1,33 @@
+7: 0 pixels  ID=8: 132166 pixels  ID=9: 0 pixels  ID=10: 344 pixels  ID=11: 0 pixels  ID=12: 0 pixels  ID=13: 0 pixels
+Bounding box at begin of meal:
+ID: 3; [ 164 309 477 390 ]
+ID: 8; [ 717 297 384 506 ]
+ID: 10; [ 1007 534 27 26 ]
+
+
+
+leftover 1:
+
+ID=0: 0 pixels  ID=1: 0 pixels  ID=2: 0 pixels  ID=3: 112203 pixels  ID=4: 0 pixels  ID=5: 0 pixels  ID=6: 0 pixels  ID=7: 0 pixels  ID=8: 132510 pixels  ID=9: 0 pixels  ID=10: 0 pixels  ID=11: 0 pixels  ID=12: 0 pixels  ID=13: 0 pixels
+Bounding box at end of meal:
+ID: 3; [ 673 312 438 514 ]
+ID: 8; [ 241 329 384 504 ]
+IoU for class 3 = 0.749038
+IoU for class 8 = 0.535683
+IoU for class 10 = 0.006240
+average IoU = 0.430320
+end IoU for class 3 = 0.000000
+end IoU for class 8 = 0.000000
+end IoU for class 10 = 0.000000
+average IoU at end of meal = 0.000000
+ratio R for class 3 = 0.864037
+ratio R for class 8 = 1.002603
+ratio R for class 10 = 0.000000
+real ratio R for class 3 = 0.477786
+real ratio R for class 8 = 0.698276
+real ratio R for class 10 = 0.662834
+
+
+
+leftover 2:
+Errore non Þ stato trovato almeno un primo e un secondo nei piatti alla fine del pasto

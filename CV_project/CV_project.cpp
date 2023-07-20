@@ -19,10 +19,10 @@ int main()
 {
     
 
-    string path = "Food_leftover_dataset/tray7/";  //image at begin of meal
+    string path = "Food_leftover_dataset/tray8/";  //image at begin of meal
 
     Mat source = imread(path+ "food_image.jpg");    //image at begin of meal
-    Mat end_source = imread(path + "leftover2.jpg");    //image at end of meal
+    Mat end_source = imread(path + "leftover3.jpg");    //image at end of meal
 
     Mat clusters(source.rows, source.cols, CV_8UC3, Scalar(0,0,0));
     Mat end_clusters(source.rows, source.cols, CV_8UC3, Scalar(0,0,0));
@@ -95,12 +95,12 @@ int main()
 
     }
 
-    for (int i = 0; i < foods.size(); i++) {
+    /*for (int i = 0; i < foods.size(); i++) {
         for (int j = 0; j < foods[i].size(); j++) {
             cout << to_string(foods[i][j]) << "  ";
         }
         cout << "\n";
-    }
+    }*/
 
 
     //filter small amount of pasta to avoid false positive
@@ -153,7 +153,7 @@ int main()
             first_dish_img = i;
         }
     }
-    cout << "First dish = " << to_string(id) << " with quantity = " << to_string(max) << "\n";
+    //cout << "First dish = " << to_string(id) << " with quantity = " << to_string(max) << "\n";
 
 
     int second_dish_img;
@@ -210,7 +210,7 @@ int main()
     Point matchLoc = food_recognition_rectangle(source, template_img);
     rectangle(source, matchLoc, Point(matchLoc.x + template_img.cols, matchLoc.y + template_img.rows), Vec3b(255, 0, 0), 2, 8, 0);
 
-    vector<int> primo_locations = { id, matchLoc.x, matchLoc.y, matchLoc.x + template_img.cols, matchLoc.y + template_img.rows };
+    vector<int> primo_locations = { id, matchLoc.x, matchLoc.y, template_img.cols, template_img.rows };
     foods_localization.push_back(primo_locations);
 
 
@@ -287,7 +287,7 @@ int main()
                     vector<Point> locations = calculate_template_from_cluster(source, clustered, dishes[second_dish_img], k);
                     rectangle(source, locations[0], locations[1], Vec3b(0, 0, 255), 2, 8, 0);
                     if (patate == k) {
-                        vector<int> secondo_locations = { 11, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+                        vector<int> secondo_locations = { 11, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
                         foods_localization.push_back(secondo_locations);
 
                         for (int i = 0; i < clustered.rows; i++) {
@@ -299,7 +299,7 @@ int main()
                         }
                     }
                     else if (fagioli == k) {
-                        vector<int> secondo_locations = { 10, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+                        vector<int> secondo_locations = { 10, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
                         foods_localization.push_back(secondo_locations);
 
                         for (int i = 0; i < clustered.rows; i++) {
@@ -311,7 +311,7 @@ int main()
                         }
                     }
                     else {
-                        vector<int> secondo_locations = { secondo_id, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+                        vector<int> secondo_locations = { secondo_id, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
                         foods_localization.push_back(secondo_locations);
 
                         for (int i = 0; i < clustered.rows; i++) {
@@ -370,7 +370,7 @@ int main()
                     rectangle(source, locations[0], locations[1], Vec3b(0, 0, 255), 2, 8, 0);
 
                     if (fagioli == k) {
-                        vector<int> secondo_locations = { 10, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+                        vector<int> secondo_locations = { 10, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
                         foods_localization.push_back(secondo_locations);
 
                         for (int i = 0; i < clustered.rows; i++) {
@@ -382,7 +382,7 @@ int main()
                         }
                     }
                     else {
-                        vector<int> secondo_locations = { secondo_id, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+                        vector<int> secondo_locations = { secondo_id, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
                         foods_localization.push_back(secondo_locations);
 
                         for (int i = 0; i < clustered.rows; i++) {
@@ -439,7 +439,7 @@ int main()
                     rectangle(source, locations[0], locations[1], Vec3b(0, 0, 255), 2, 8, 0);
 
                     if (patate == k) {
-                        vector<int> secondo_locations = { 11, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+                        vector<int> secondo_locations = { 11, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
                         foods_localization.push_back(secondo_locations);
 
                         for (int i = 0; i < clustered.rows; i++) {
@@ -451,7 +451,7 @@ int main()
                         }
                     }
                     else {
-                        vector<int> secondo_locations = { secondo_id, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+                        vector<int> secondo_locations = { secondo_id, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
                         foods_localization.push_back(secondo_locations);
 
                         for (int i = 0; i < clustered.rows; i++) {
@@ -491,7 +491,7 @@ int main()
                     if (food_pixels[id] > 0)
                         secondo_id = id;
                 }
-                vector<int> secondo_locations = { secondo_id, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+                vector<int> secondo_locations = { secondo_id, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
                 foods_localization.push_back(secondo_locations);
 
                 Point matchLoc = food_recognition_rectangle(source, dishes[second_dish_img]);
@@ -510,7 +510,7 @@ int main()
 
     //find insalata:
     vector<Mat> insalate = find_salad(source);
-    cout << "Finded " << to_string(insalate.size()) << " insalate\n";
+    //cout << "Finded " << to_string(insalate.size()) << " insalate\n";
     for (int i = 0; i < insalate.size(); i++) {
         Mat src = insalate[i];
         string name = "start insalata";
@@ -521,7 +521,7 @@ int main()
         Point matchLoc = food_recognition_rectangle(source, template_img);
         rectangle(source, matchLoc, Point(matchLoc.x + template_img.cols, matchLoc.y + template_img.rows), Vec3b(0, 255, 0), 2, 8, 0);
 
-        vector<int> insalata_locations = { 12, matchLoc.x, matchLoc.y, matchLoc.x + template_img.cols, matchLoc.y + template_img.rows };
+        vector<int> insalata_locations = { 12, matchLoc.x, matchLoc.y, template_img.cols, template_img.rows };
         foods_localization.push_back(insalata_locations);
 
         for (int i = 0; i < template_img.rows; i++) {
@@ -648,12 +648,12 @@ int main()
 
 
     }
-    for (int i = 0; i < end_foods.size(); i++) {
+    /*for (int i = 0; i < end_foods.size(); i++) {
         for (int j = 0; j < end_foods[i].size(); j++) {
             cout << to_string(end_foods[i][j]) << "  ";
         }
         cout << "\n";
-    }
+    }*/
 
     vector<int> end_food_pixels(14);
 
@@ -734,7 +734,7 @@ int main()
     matchLoc = food_recognition_rectangle(end_source, template_img);
     rectangle(end_source, matchLoc, Point(matchLoc.x + template_img.cols, matchLoc.y + template_img.rows), Vec3b(255, 0, 0), 2, 8, 0);
 
-    primo_locations = { primo_id, matchLoc.x, matchLoc.y, matchLoc.x + template_img.cols, matchLoc.y + template_img.rows };
+    primo_locations = { primo_id, matchLoc.x, matchLoc.y, template_img.cols, template_img.rows };
     end_foods_localization.push_back(primo_locations);
 
     for (int i = 0; i < cluster_primo.rows; i++) {
@@ -822,7 +822,7 @@ int main()
             vector<Point> locations = calculate_template_from_cluster(end_source, clustered, end_dishes[end_second_dish_img], k);
             rectangle(end_source, locations[0], locations[1], Vec3b(0, 0, 255), 2, 8, 0);
             if (patate == k) {
-                vector<int> secondo_locations = { 11, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+                vector<int> secondo_locations = { 11, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
                 end_foods_localization.push_back(secondo_locations);
 
                 for (int i = 0; i < clustered.rows; i++) {
@@ -834,7 +834,7 @@ int main()
                 }
             }
             else if (fagioli == k) {
-                vector<int> secondo_locations = { 10, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+                vector<int> secondo_locations = { 10, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
                 end_foods_localization.push_back(secondo_locations);
 
                 for (int i = 0; i < clustered.rows; i++) {
@@ -846,7 +846,7 @@ int main()
                 }
             }
             else {
-                vector<int> secondo_locations = { secondo_id, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+                vector<int> secondo_locations = { secondo_id, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
                 end_foods_localization.push_back(secondo_locations);
 
                 for (int i = 0; i < clustered.rows; i++) {
@@ -893,7 +893,7 @@ int main()
             rectangle(end_source, locations[0], locations[1], Vec3b(0, 0, 255), 2, 8, 0);
 
             if (fagioli == k) {
-                vector<int> secondo_locations = { 10, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+                vector<int> secondo_locations = { 10, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
                 end_foods_localization.push_back(secondo_locations);
 
                 for (int i = 0; i < clustered.rows; i++) {
@@ -905,7 +905,7 @@ int main()
                 }
             }
             else {
-                vector<int> secondo_locations = { secondo_id, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+                vector<int> secondo_locations = { secondo_id, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
                 end_foods_localization.push_back(secondo_locations);
 
                 for (int i = 0; i < clustered.rows; i++) {
@@ -951,7 +951,7 @@ int main()
             rectangle(end_source, locations[0], locations[1], Vec3b(0, 0, 255), 2, 8, 0);
 
             if (patate == k) {
-                vector<int> secondo_locations = { 11, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+                vector<int> secondo_locations = { 11, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
                 end_foods_localization.push_back(secondo_locations);
 
                 for (int i = 0; i < clustered.rows; i++) {
@@ -963,7 +963,7 @@ int main()
                 }
             }
             else {
-                vector<int> secondo_locations = { secondo_id, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+                vector<int> secondo_locations = { secondo_id, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
                 end_foods_localization.push_back(secondo_locations);
 
                 for (int i = 0; i < clustered.rows; i++) {
@@ -1002,7 +1002,7 @@ int main()
             rectangle(end_source, locations[0], locations[1], Vec3b(0, 0, 255), 2, 8, 0);
 
             if (patate == k) {
-                vector<int> secondo_locations = { 11, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+                vector<int> secondo_locations = { 11, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
                 end_foods_localization.push_back(secondo_locations);
 
                 for (int i = 0; i < clustered.rows; i++) {
@@ -1014,7 +1014,7 @@ int main()
                 }
             }
             else {  //fagioli
-                vector<int> secondo_locations = { 10, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+                vector<int> secondo_locations = { 10, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
                 end_foods_localization.push_back(secondo_locations);
 
                 for (int i = 0; i < clustered.rows; i++) {
@@ -1047,7 +1047,7 @@ int main()
             if (food_pixels[id] > 0)
                 secondo_id = id;
         }
-        vector<int> secondo_locations = { secondo_id, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+        vector<int> secondo_locations = { secondo_id, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
         end_foods_localization.push_back(secondo_locations);
 
         Point matchLoc = food_recognition_rectangle(end_source, end_dishes[end_second_dish_img]);
@@ -1071,7 +1071,7 @@ int main()
         vector<Point> locations = calculate_template_from_cluster(end_source, clustered, end_dishes[end_second_dish_img], 1);
         rectangle(end_source, locations[0], locations[1], Vec3b(0, 0, 255), 2, 8, 0);
 
-        vector<int> secondo_locations = { 10, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+        vector<int> secondo_locations = { 10, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
         end_foods_localization.push_back(secondo_locations);
 
         Point matchLoc = food_recognition_rectangle(end_source, end_dishes[end_second_dish_img]);
@@ -1096,7 +1096,7 @@ int main()
         vector<Point> locations = calculate_template_from_cluster(end_source, clustered, end_dishes[end_second_dish_img], 1);
         rectangle(end_source, locations[0], locations[1], Vec3b(0, 0, 255), 2, 8, 0);
 
-        vector<int> secondo_locations = { 11, locations[0].x, locations[0].y, locations[1].x, locations[1].y };
+        vector<int> secondo_locations = { 11, locations[0].x, locations[0].y, locations[1].x- locations[0].x, locations[1].y- locations[0].y };
         end_foods_localization.push_back(secondo_locations);
 
         Point matchLoc = food_recognition_rectangle(end_source, end_dishes[end_second_dish_img]);
@@ -1115,7 +1115,7 @@ int main()
     if (food_pixels[12] > 0) {  //salad present at begin of meal
         //find insalata:
         vector<Mat> end_insalate = find_salad(end_source);
-        cout << "Finded " << to_string(insalate.size()) << " insalate\n";
+        //cout << "Finded " << to_string(insalate.size()) << " insalate\n";
         if (insalate.size() != 1) {
             cout << "Insalata non trovata alla fine del pasto\n";
         }
@@ -1131,7 +1131,7 @@ int main()
             Point matchLoc = food_recognition_rectangle(end_source, template_img);
             rectangle(end_source, matchLoc, Point(matchLoc.x + template_img.cols, matchLoc.y + template_img.rows), Vec3b(0, 255, 0), 2, 8, 0);
 
-            vector<int> insalata_locations = { 12, matchLoc.x, matchLoc.y, matchLoc.x + template_img.cols, matchLoc.y + template_img.rows };
+            vector<int> insalata_locations = { 12, matchLoc.x, matchLoc.y, template_img.cols, template_img.rows };
             end_foods_localization.push_back(insalata_locations);
 
             for (int i = 0; i < template_img.rows; i++) {
@@ -1171,8 +1171,16 @@ int main()
 
 
 
+    //////////////////////////////////////////////////////////////////
 
 
+    imwrite(path + "quadrati_inizio.jpg", source);
+    imwrite(path + "cluster_inizio.jpg", print_clustered_img(clusters));
+    imwrite(path + "quadrati_fine.jpg", end_source);
+    imwrite(path + "cluster_fine.jpg", print_clustered_img(end_clusters));
+
+
+    //////////////////////////////////////////////////////////////////
     //EVALUATE METRICS
 
     Mat mask = imread(path + "masks/food_image_mask.png");
@@ -1203,8 +1211,8 @@ int main()
     cout << "average IoU = " << to_string(average_IoU) << "\n";
 
 
-
-    Mat end_mask = imread(path + "masks/leftover2.png");
+    //MODIFICARE PERCORSO PER CALCOLO METRICHE!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    Mat end_mask = imread(path + "masks/leftover3.png");
     sum_IoU = 0;
     for (int food = 0; food < food_pixels.size(); food++) {//vector with num of pixels for foods in image
         int intersection = 0;
@@ -1247,6 +1255,7 @@ int main()
             cout << "real ratio R for class " << to_string(food) << " = " << to_string(ratio_r) << "\n";
         }
     }
+
 
 
 

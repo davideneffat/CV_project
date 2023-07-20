@@ -1,0 +1,91 @@
+ID=0: 0 pixels  ID=1: 0 pixels  ID=2: 0 pixels  ID=3: 0 pixels  ID=4: 102106 pixels  ID=5: 0 pixels  ID=6: 0 pixels  ID=7: 0 pixels  ID=8: 28220 pixels  ID=9: 0 pixels  ID=10: 70512 pixels  ID=11: 26386 pixels  ID=12: 0 pixels  ID=13: 0 pixels
+Bounding box at begin of meal:
+ID: 4; [ 240 152 420 354 ]
+ID: 11; [ 638 400 325 392 ]
+ID: 10; [ 557 441 486 458 ]
+ID: 8; [ 557 400 494 442 ]
+
+
+
+
+leftover 1:
+ID=0: 0 pixels  ID=1: 0 pixels  ID=2: 0 pixels  ID=3: 0 pixels  ID=4: 63804 pixels  ID=5: 0 pixels  ID=6: 0 pixels  ID=7: 0 pixels  ID=8: 7651 pixels  ID=9: 0 pixels  ID=10: 0 pixels  ID=11: 0 pixels  ID=12: 0 pixels  ID=13: 0 pixels
+Bounding box at end of meal:
+ID: 4; [ 324 143 337 330 ]
+ID: 11; [ 658 492 168 183 ]
+ID: 10; [ 656 557 269 234 ]
+ID: 8; [ 643 521 188 168 ]
+IoU for class 4 = 0.844220
+IoU for class 8 = 0.000000
+IoU for class 10 = 0.552713
+IoU for class 11 = 0.694462
+average IoU = 0.522849
+end IoU for class 4 = 0.309839
+end IoU for class 8 = 0.000000
+end IoU for class 10 = 0.625168
+end IoU for class 11 = 0.000000
+average IoU at end of meal = 0.233752
+ratio R for class 4 = 0.624880
+ratio R for class 8 = 0.271120
+ratio R for class 10 = 0.000000
+ratio R for class 11 = 0.000000
+real ratio R for class 4 = 0.227241
+real ratio R for class 8 = -nan(ind)
+real ratio R for class 10 = 0.259124
+real ratio R for class 11 = 0.000000
+
+
+
+
+leftover 2:
+ID=0: 0 pixels  ID=1: 0 pixels  ID=2: 0 pixels  ID=3: 0 pixels  ID=4: 72290 pixels  ID=5: 0 pixels  ID=6: 0 pixels  ID=7: 0 pixels  ID=8: 24945 pixels  ID=9: 0 pixels  ID=10: 0 pixels  ID=11: 0 pixels  ID=12: 0 pixels  ID=13: 0 pixels
+Bounding box at end of meal:
+ID: 4; [ 298 519 337 308 ]
+ID: 11; [ 597 168 446 393 ]
+ID: 10; [ 565 157 310 363 ]
+ID: 8; [ 598 168 439 351 ]
+IoU for class 4 = 0.844220
+IoU for class 8 = 0.000000
+IoU for class 10 = 0.552713
+IoU for class 11 = 0.694462
+average IoU = 0.522849
+end IoU for class 4 = 0.668651
+end IoU for class 8 = 0.000000
+end IoU for class 10 = 0.582492
+end IoU for class 11 = 0.000000
+average IoU at end of meal = 0.312786
+ratio R for class 4 = 0.707990
+ratio R for class 8 = 0.883948
+ratio R for class 10 = 0.000000
+ratio R for class 11 = 0.000000
+real ratio R for class 4 = 0.554285
+real ratio R for class 8 = -nan(ind)
+real ratio R for class 10 = 1.275212
+real ratio R for class 11 = 0.000000
+
+
+
+leftover 3:
+ID=0: 0 pixels  ID=1: 0 pixels  ID=2: 0 pixels  ID=3: 0 pixels  ID=4: 49942 pixels  ID=5: 0 pixels  ID=6: 0 pixels  ID=7: 0 pixels  ID=8: 8193 pixels  ID=9: 0 pixels  ID=10: 0 pixels  ID=11: 332 pixels  ID=12: 0 pixels  ID=13: 0 pixels
+Bounding box at end of meal:
+ID: 4; [ 865 370 274 295 ]
+ID: 11; [ 577 199 90 161 ]
+ID: 10; [ 393 413 157 19 ]
+IoU for class 4 = 0.844220
+IoU for class 8 = 0.000000
+IoU for class 10 = 0.552713
+IoU for class 11 = 0.694462
+average IoU = 0.522849
+end IoU for class 4 = 0.456512
+end IoU for class 8 = 0.000000
+end IoU for class 10 = -nan(ind)
+end IoU for class 11 = 0.000000
+average IoU at end of meal = -nan(ind)
+ratio R for class 4 = 0.489119
+ratio R for class 8 = 0.290326
+ratio R for class 10 = 0.000000
+ratio R for class 11 = 0.012582
+real ratio R for class 4 = 0.260787
+real ratio R for class 8 = -nan(ind)
+real ratio R for class 10 = 0.000000
+real ratio R for class 11 = 0.000000

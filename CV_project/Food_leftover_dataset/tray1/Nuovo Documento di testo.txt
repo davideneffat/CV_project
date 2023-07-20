@@ -1,0 +1,73 @@
+ID=0: 0 pixels  ID=1: 115539 pixels  ID=2: 0 pixels  ID=3: 0 pixels  ID=4: 0 pixels  ID=5: 0 pixels  ID=6: 66007 pixels  ID=7: 0 pixels  ID=8: 0 pixels  ID=9: 0 pixels  ID=10: 60291 pixels  ID=11: 0 pixels  ID=12: 0 pixels  ID=13: 0 pixels
+
+Bounding box at begin of meal:
+ID: 1; [ 717 148 1211 541 ]
+ID: 6; [ 263 434 692 890 ]
+ID: 10; [ 257 446 662 888 ]
+
+leftover 1:
+ID=0: 0 pixels  ID=1: 118188 pixels  ID=2: 0 pixels  ID=3: 0 pixels  ID=4: 0 pixels  ID=5: 0 pixels  ID=6: 38059 pixels  ID=7: 0 pixels  ID=8: 0 pixels  ID=9: 0 pixels  ID=10: 96218 pixels  ID=11: 0 pixels  ID=12: 0 pixels  ID=13: 0 pixels
+
+Bounding box at end of meal:
+ID: 1; [ 657 94 1165 504 ]
+ID: 6; [ 227 396 755 859 ]
+ID: 10; [ 258 394 754 858 ]
+IoU for class 1 = 0.873080
+IoU for class 6 = 0.730600
+IoU for class 10 = 0.740014
+average IoU = 0.781231
+end IoU for class 1 = 0.648184
+end IoU for class 6 = 0.371024
+end IoU for class 10 = 0.653419
+average IoU at end of meal = 0.557542
+ratio R for class 1 = 1.022927
+ratio R for class 6 = 0.576590
+ratio R for class 10 = 1.595893
+real ratio R for class 1 = 0.741780
+real ratio R for class 6 = 0.817034
+real ratio R for class 10 = 1.285250
+
+
+leftover 2:
+ID=0: 0 pixels  ID=1: 136408 pixels  ID=2: 0 pixels  ID=3: 0 pixels  ID=4: 0 pixels  ID=5: 0 pixels  ID=6: 32050 pixels  ID=7: 0 pixels  ID=8: 0 pixels  ID=9: 0 pixels  ID=10: 52913 pixels  ID=11: 0 pixels  ID=12: 0 pixels  ID=13: 0 pixels
+Bounding box at end of meal:
+ID: 1; [ 50 373 672 863 ]
+ID: 6; [ 580 135 1041 597 ]
+ID: 10; [ 628 135 1030 502 ]
+IoU for class 1 = 0.873080
+IoU for class 6 = 0.730600
+IoU for class 10 = 0.740014
+average IoU = 0.781231
+end IoU for class 1 = 0.371872
+end IoU for class 6 = 0.729218
+end IoU for class 10 = 0.867616
+average IoU at end of meal = 0.656235
+ratio R for class 1 = 1.180623
+ratio R for class 6 = 0.485555
+ratio R for class 10 = 0.877627
+real ratio R for class 1 = 0.487009
+real ratio R for class 6 = 0.431042
+real ratio R for class 10 = 0.844993
+
+
+
+leftover 3:
+ID=0: 0 pixels  ID=1: 88363 pixels  ID=2: 0 pixels  ID=3: 0 pixels  ID=4: 0 pixels  ID=5: 0 pixels  ID=6: 190 pixels  ID=7: 0 pixels  ID=8: 0 pixels  ID=9: 0 pixels  ID=10: 62957 pixels  ID=11: 0 pixels  ID=12: 0 pixels  ID=13: 0 pixels
+Bounding box at end of meal:
+ID: 1; [ 247 449 730 873 ]
+ID: 6; [ 679 146 1011 488 ]
+ID: 10; [ 976 361 990 375 ]
+IoU for class 1 = 0.873080
+IoU for class 6 = 0.730600
+IoU for class 10 = 0.740014
+average IoU = 0.781231
+end IoU for class 1 = 0.000000
+end IoU for class 6 = 0.000000
+end IoU for class 10 = 0.886516
+average IoU at end of meal = 0.295505
+ratio R for class 1 = 0.764789
+ratio R for class 6 = 0.002878
+ratio R for class 10 = 1.044219
+real ratio R for class 1 = 0.000000
+real ratio R for class 6 = 0.000000
+real ratio R for class 10 = 1.067888

@@ -1,0 +1,54 @@
+ID=0: 0 pixels  ID=1: 0 pixels  ID=2: 130949 pixels  ID=3: 0 pixels  ID=4: 0 pixels  ID=5: 0 pixels  ID=6: 0 pixels  ID=7: 0 pixels  ID=8: 13237 pixels  ID=9: 0 pixels  ID=10: 35663 pixels  ID=11: 0 pixels  ID=12: 0 pixels  ID=13: 0 pixels
+
+Bounding box at begin of meal:
+ID: 2; [ 670 329 546 531 ]
+ID: 8; [ 392 164 277 279 ]
+ID: 10; [ 381 176 282 271 ]
+
+
+
+
+leftover 1:
+ID=0: 0 pixels  ID=1: 0 pixels  ID=2: 98995 pixels  ID=3: 0 pixels  ID=4: 0 pixels  ID=5: 0 pixels  ID=6: 0 pixels  ID=7: 0 pixels  ID=8: 9343 pixels  ID=9: 0 pixels  ID=10: 37914 pixels  ID=11: 0 pixels  ID=12: 0 pixels  ID=13: 0 pixels
+Bounding box at end of meal:
+ID: 2; [ 593 406 450 386 ]
+ID: 8; [ 176 90 371 401 ]
+ID: 10; [ 192 101 391 271 ]
+IoU for class 2 = 0.385009
+IoU for class 8 = 0.000000
+IoU for class 10 = 0.000000
+average IoU = 0.128336
+end IoU for class 2 = 0.160420
+end IoU for class 8 = 0.000000
+end IoU for class 10 = 0.000000
+average IoU at end of meal = 0.053473
+ratio R for class 2 = 0.755981
+ratio R for class 8 = 0.705825
+ratio R for class 10 = 1.063119
+real ratio R for class 2 = 0.344395
+real ratio R for class 8 = 0.770495
+real ratio R for class 10 = -nan(ind)
+
+
+
+
+leftover 2:
+ID=0: 0 pixels  ID=1: 0 pixels  ID=2: 76178 pixels  ID=3: 0 pixels  ID=4: 0 pixels  ID=5: 0 pixels  ID=6: 0 pixels  ID=7: 0 pixels  ID=8: 55314 pixels  ID=9: 0 pixels  ID=10: 4561 pixels  ID=11: 0 pixels  ID=12: 0 pixels  ID=13: 0 pixels
+Bounding box at end of meal:
+ID: 2; [ 223 124 393 286 ]
+ID: 8; [ 590 399 438 428 ]
+ID: 10; [ 634 902 137 58 ]
+IoU for class 2 = 0.385009
+IoU for class 8 = 0.000000
+IoU for class 10 = 0.000000
+average IoU = 0.128336
+end IoU for class 2 = 0.386500
+end IoU for class 8 = 0.503598
+end IoU for class 10 = 0.000000
+average IoU at end of meal = 0.296699
+ratio R for class 2 = 0.581738
+ratio R for class 8 = 4.178741
+ratio R for class 10 = 0.127892
+real ratio R for class 2 = 0.318970
+real ratio R for class 8 = 0.843748
+real ratio R for class 10 = -nan(ind)
